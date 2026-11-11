@@ -1,0 +1,3614 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f6f4ef">
+  <meta name="description" content="パソコンとiPhone・iPadの画面を、ブラウザで1対1につなぐミラーリング。">
+  <title>うつし窓 | 画面ミラーリング</title>
+<style>
+:root {
+  color-scheme: light;
+  --paper: #f6f4ef;
+  --surface: #fffdfa;
+  --ink: #212627;
+  --muted: #575d5b;
+  --line: #d7d4cb;
+  --accent: #a83125;
+  --dark: #202526;
+  font-family: "Hiragino Sans", "Yu Gothic UI", Meiryo, system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); }
+[hidden] { display: none !important; }
+button, input, select, textarea { font: inherit; }
+button, summary, select { cursor: pointer; }
+button:disabled, select:disabled { cursor: default; opacity: .58; }
+:focus-visible { outline: 3px solid #397770; outline-offset: 4px; }
+.shell { width: min(1120px, 100% - 64px); margin: 0 auto; padding-bottom: 44px; }
+.masthead { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 19px 0; border-bottom: 1px solid var(--line); }
+.brand { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; font-size: 20px; font-weight: 750; letter-spacing: .05em; }
+.brand svg { width: 36px; height: 36px; color: var(--accent); flex: none; }
+.device-label, .code, .preview-top { font-family: "IBM Plex Mono", "SFMono-Regular", Consolas, monospace; }
+.device-label { color: var(--muted); font-size: .82rem; text-align: right; }
+.intro { padding: clamp(32px, 6vw, 66px) 0 27px; }
+h1 { margin: 0 0 12px; font-size: clamp(36px, 6vw, 68px); font-weight: 760; line-height: 1.13; letter-spacing: -.075em; }
+.intro p { margin: 0; color: var(--muted); font-size: .95rem; line-height: 1.8; }
+.mobile-break { display: none; }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(286px, 320px); align-items: start; gap: 18px; }
+.preview { background: var(--dark); color: #f2f0eb; overflow: hidden; border-radius: 16px; border: 1px solid var(--dark); }
+.preview-top { display: flex; align-items: center; justify-content: space-between; min-height: 47px; padding: 9px 15px; font-size: .78rem; border-bottom: 1px solid #434a49; }
+.preview-top span:first-child { display: inline-flex; gap: 8px; align-items: center; }
+.preview-top i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #a4aeaa; }
+.preview-top .video-details { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 12px; text-align: right; }
+.preview-top i.recovering { background: #e7ae6d; }
+.preview-top i.live { background: #f17864; box-shadow: 0 0 0 4px #f1786428; }
+.screen { position: relative; display: grid; place-items: center; aspect-ratio: 16 / 9; min-height: 190px; background: radial-gradient(ellipse at center, #2a3131 0%, #202526 72%); }
+.screen:has(video:not([hidden])) { background: #101314; }
+.screen:fullscreen { width: 100%; height: 100%; }
+video { position: absolute; width: 100%; height: 100%; object-fit: contain; }
+.placeholder { text-align: center; color: #c2ccc7; padding: 16px; }
+.placeholder svg { width: clamp(105px, 21vw, 190px); }
+.video-message { position: absolute; inset: auto auto 14px 50%; transform: translateX(-50%); padding: 7px 12px; border-radius: 8px; background: #202526ee; color: white; font-size: .85rem; white-space: nowrap; }
+.placeholder p { margin: 10px 0 0; font-size: .83rem; }
+.preview-actions { display: flex; min-height: 47px; flex-wrap: wrap; gap: 5px; justify-content: flex-end; padding: 3px 8px; border-top: 1px solid #434a49; }
+.ghost { background: transparent; border: 1px solid transparent; border-radius: 6px; color: inherit; padding: 8px; font-size: .81rem; }
+.ghost:hover { background: #3b4342; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.roles { display: grid; grid-template-columns: 1fr 1fr; background: #efede6; border-bottom: 1px solid var(--line); }
+.roles button { min-height: 54px; padding: 8px 3px; background: transparent; border: 0; border-bottom: 3px solid transparent; color: var(--muted); font-weight: 670; }
+.roles button[aria-pressed="true"] { color: var(--accent); background: var(--surface); border-bottom-color: var(--accent); }
+.panel-body { padding: 17px; display: grid; gap: 10px; }
+.panel-body form, #manual-in, #manual-out, #invite { display: grid; gap: 8px; }
+.quality-option { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; column-gap: 12px; row-gap: 4px; }
+.quality-note { grid-column: 1 / -1; margin: 0; color: var(--muted); font-size: .76rem; }
+.field-label { font-weight: 680; font-size: .82rem; }
+select, textarea, input:not([type="checkbox"]) { color: var(--ink); width: 100%; min-width: 0; border: 1px solid #aaa9a1; border-radius: 8px; padding: 9px; background: white; font-size: 16px; }
+textarea { resize: vertical; overflow-wrap: anywhere; font: 16px/1.4 monospace; }
+.status { margin: 1px 0 4px; color: var(--muted); font-size: .87rem; line-height: 1.6; overflow-wrap: anywhere; }
+.status.error { color: var(--accent); }
+.primary, .secondary { border-radius: 8px; padding: 10px 7px; min-height: 44px; font-weight: 690; font-size: .89rem; }
+.primary { color: white; background: var(--accent); border: 1px solid var(--accent); }
+.primary:hover:enabled { background: #88271e; }
+.secondary { color: var(--ink); background: var(--surface); border: 1px solid #b8b6ae; }
+.secondary:hover:enabled { background: #f0ede5; }
+.check { display: flex; align-items: center; gap: 6px; min-height: 34px; font-size: .83rem; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+#qr { justify-self: center; width: min(184px, 100%); padding: 8px; background: white; border: 1px solid var(--line); border-radius: 8px; }
+#qr svg { display: block; width: 100%; height: auto; }
+.code { margin: 0; text-align: center; font-size: clamp(.8rem, 3vw, 1rem); font-weight: bold; overflow-wrap: anywhere; }
+.help { margin-top: 20px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); }
+.help summary { padding: 13px 0; font-weight: 700; }
+.help ul { margin: 0; padding-left: 21px; line-height: 1.7; }
+.help li + li { margin-top: 6px; }
+@media (max-width: 740px) {
+  .shell { width: min(100% - 32px, 550px); }
+  .workspace { grid-template-columns: 1fr; gap: 13px; }
+  .workspace:not(.has-video) .panel { grid-row: 1; }
+  .workspace:not(.has-video) .screen { aspect-ratio: 2 / 1; min-height: 140px; }
+  .workspace:not(.has-video) .preview-actions { display: none; }
+}
+@media (max-width: 340px) {
+  .shell { width: calc(100% - 22px); }
+  .device-label { font-size: .69rem; }
+}
+</style>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <a class="brand" href="./" aria-label="うつし窓 トップ">
+        <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><rect x="3" y="7" width="25" height="19" rx="3" stroke="currentColor" stroke-width="2"/><rect x="16" y="15" width="19" height="19" rx="3" fill="var(--paper)" stroke="currentColor" stroke-width="2"/><path d="M21 28l9-9m-7 0h7v7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        うつし窓
+      </a>
+      <span class="device-label">PC <span aria-hidden="true">↔</span> iPhone / iPad</span>
+    </header>
+    <section class="intro">
+      <h1>画面を、<br class="mobile-break">もう一台へ。</h1>
+      <p>映したい端末と、見る端末の両方でこのサイトを開きます。</p>
+    </section>
+
+    <div class="workspace">
+      <section class="preview" aria-label="映像">
+        <div class="preview-top"><span><i id="signal" aria-hidden="true"></i><span id="preview-state">待機中</span></span><span class="video-details"><span id="link-path"></span><span id="size"></span></span></div>
+        <div class="screen" id="screen">
+          <div class="placeholder" id="placeholder">
+            <svg viewBox="0 0 190 108" fill="none" aria-hidden="true">
+              <rect x="13" y="17" width="109" height="67" rx="7" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M60 84v12m15-12v12M46 96h43M45 52h37m-7-7 7 7-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="137" y="31" width="42" height="65" rx="7" fill="#202526" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M152 84h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+              <circle cx="158" cy="60" r="5" fill="#f17864"/>
+            </svg>
+            <p id="placeholder-text">接続すると映像がここに表示されます</p>
+          </div>
+          <video id="video" autoplay playsinline muted hidden></video>
+          <span id="video-message" class="video-message" hidden>再接続中…</span>
+        </div>
+        <div class="preview-actions">
+          <button type="button" class="ghost" id="play" hidden>映像を再生</button>
+          <button type="button" class="ghost" id="sound" hidden>音を出す</button>
+          <button type="button" class="ghost" id="fullscreen" hidden>全画面 ↗</button>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="接続操作">
+        <div class="roles" aria-label="この端末の役割">
+          <button id="send-role" type="button" aria-pressed="true">画面を送る</button>
+          <button id="view-role" type="button" aria-pressed="false">画面を見る</button>
+        </div>
+        <div class="panel-body">
+          <label class="field-label" for="mode">接続方法</label>
+          <select id="mode">
+            <option value="auto">QRコード・接続コード</option>
+            <option value="manual">手動（接続サービスなし）</option>
+          </select>
+          <p class="status" id="status" role="status" aria-live="polite"></p>
+
+          <form id="join-form" hidden>
+            <label class="field-label" for="join">接続コード</label>
+            <input id="join" placeholder="XXXX-XXXX-XXXX-XXXX" maxlength="30" autocapitalize="characters" autocomplete="off" spellcheck="false">
+            <button class="primary" type="submit">接続する</button>
+          </form>
+
+          <div id="invite" hidden>
+            <div id="qr" aria-label="見る端末用の接続QRコード"></div>
+            <p id="invite-code" class="code"></p>
+            <button type="button" class="secondary" id="copy-link">招待リンクをコピー</button>
+          </div>
+
+          <div id="manual-in" hidden>
+            <label class="field-label" for="incoming" id="incoming-label"></label>
+            <textarea id="incoming" rows="3" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea>
+            <button type="button" class="primary" id="apply-code">コードを読み込む</button>
+          </div>
+          <div id="manual-out" hidden>
+            <label class="field-label" for="outgoing" id="outgoing-label"></label>
+            <textarea id="outgoing" rows="3" readonly spellcheck="false"></textarea>
+            <button type="button" class="secondary" id="copy-code">コードをコピー</button>
+          </div>
+
+          <div id="quality-option" class="quality-option">
+            <label class="field-label" for="quality">画質</label>
+            <select id="quality">
+              <option value="auto">自動</option>
+              <option value="stable">安定優先</option>
+              <option value="detail">高画質</option>
+            </select>
+            <p class="quality-note" id="quality-note" hidden></p>
+          </div>
+          <label id="audio-option" class="check" hidden><input id="audio" type="checkbox"> 対応していれば共有元の音も送る</label>
+          <button type="button" class="primary" id="start" hidden></button>
+          <button type="button" class="secondary" id="local-preview" hidden>送信プレビューを表示</button>
+          <button type="button" class="secondary" id="stop" hidden>接続を終了</button>
+        </div>
+      </section>
+    </div>
+
+    <details class="help">
+      <summary>対応端末と、つながらないとき</summary>
+      <ul>
+        <li>送る側はWindowsならChromeまたはEdge、iPhone・iPadならSafari 27以降を使います。見る側はiOS・iPadOSのSafariや、パソコンのChrome・Edgeで開けます。</li>
+        <li>最初は両方を同じWi-Fiにつないでください。ゲスト用Wi-FiやVPNなどで端末同士が通信できない場合があります。</li>
+        <li>映像がかくつくときは、送る端末で画質を「安定優先」に変更できます。共有中も切り替えられます。</li>
+        <li>QR接続は、通信が途切れたときに同じ相手へ最大1分ほど再接続を試みます。両端末でページを開いたままにしてください。</li>
+        <li>QR接続はPeerServer Cloudを使います。サービスに接続できない場合は、両方で手動を選び、2つの長いコードをメッセージなどで交換できます。</li>
+        <li>iPhone・iPadから送るときは、共有を許可してから画面を切り替えます。選べる範囲や、切り替え後も共有が続くかはOSとブラウザに依存します。</li>
+      </ul>
+    </details>
+  </main>
+<!--
+MIT License
+
+Copyright (c) 2009 Kazuhiko Arase
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+-->
+
+<script>
+//---------------------------------------------------------------------
+//
+// QR Code Generator for JavaScript
+//
+// Copyright (c) 2009 Kazuhiko Arase
+//
+// URL: http://www.d-project.com/
+//
+// Licensed under the MIT license:
+//  http://www.opensource.org/licenses/mit-license.php
+//
+// The word 'QR Code' is registered trademark of
+// DENSO WAVE INCORPORATED
+//  http://www.denso-wave.com/qrcode/faqpatent-e.html
+//
+//---------------------------------------------------------------------
+
+var qrcode = function() {
+
+  //---------------------------------------------------------------------
+  // qrcode
+  //---------------------------------------------------------------------
+
+  /**
+   * qrcode
+   * @param typeNumber 1 to 40
+   * @param errorCorrectionLevel 'L','M','Q','H'
+   */
+  var qrcode = function(typeNumber, errorCorrectionLevel) {
+
+    var PAD0 = 0xEC;
+    var PAD1 = 0x11;
+
+    var _typeNumber = typeNumber;
+    var _errorCorrectionLevel = QRErrorCorrectionLevel[errorCorrectionLevel];
+    var _modules = null;
+    var _moduleCount = 0;
+    var _dataCache = null;
+    var _dataList = [];
+
+    var _this = {};
+
+    var makeImpl = function(test, maskPattern) {
+
+      _moduleCount = _typeNumber * 4 + 17;
+      _modules = function(moduleCount) {
+        var modules = new Array(moduleCount);
+        for (var row = 0; row < moduleCount; row += 1) {
+          modules[row] = new Array(moduleCount);
+          for (var col = 0; col < moduleCount; col += 1) {
+            modules[row][col] = null;
+          }
+        }
+        return modules;
+      }(_moduleCount);
+
+      setupPositionProbePattern(0, 0);
+      setupPositionProbePattern(_moduleCount - 7, 0);
+      setupPositionProbePattern(0, _moduleCount - 7);
+      setupPositionAdjustPattern();
+      setupTimingPattern();
+      setupTypeInfo(test, maskPattern);
+
+      if (_typeNumber >= 7) {
+        setupTypeNumber(test);
+      }
+
+      if (_dataCache == null) {
+        _dataCache = createData(_typeNumber, _errorCorrectionLevel, _dataList);
+      }
+
+      mapData(_dataCache, maskPattern);
+    };
+
+    var setupPositionProbePattern = function(row, col) {
+
+      for (var r = -1; r <= 7; r += 1) {
+
+        if (row + r <= -1 || _moduleCount <= row + r) continue;
+
+        for (var c = -1; c <= 7; c += 1) {
+
+          if (col + c <= -1 || _moduleCount <= col + c) continue;
+
+          if ( (0 <= r && r <= 6 && (c == 0 || c == 6) )
+              || (0 <= c && c <= 6 && (r == 0 || r == 6) )
+              || (2 <= r && r <= 4 && 2 <= c && c <= 4) ) {
+            _modules[row + r][col + c] = true;
+          } else {
+            _modules[row + r][col + c] = false;
+          }
+        }
+      }
+    };
+
+    var getBestMaskPattern = function() {
+
+      var minLostPoint = 0;
+      var pattern = 0;
+
+      for (var i = 0; i < 8; i += 1) {
+
+        makeImpl(true, i);
+
+        var lostPoint = QRUtil.getLostPoint(_this);
+
+        if (i == 0 || minLostPoint > lostPoint) {
+          minLostPoint = lostPoint;
+          pattern = i;
+        }
+      }
+
+      return pattern;
+    };
+
+    var setupTimingPattern = function() {
+
+      for (var r = 8; r < _moduleCount - 8; r += 1) {
+        if (_modules[r][6] != null) {
+          continue;
+        }
+        _modules[r][6] = (r % 2 == 0);
+      }
+
+      for (var c = 8; c < _moduleCount - 8; c += 1) {
+        if (_modules[6][c] != null) {
+          continue;
+        }
+        _modules[6][c] = (c % 2 == 0);
+      }
+    };
+
+    var setupPositionAdjustPattern = function() {
+
+      var pos = QRUtil.getPatternPosition(_typeNumber);
+
+      for (var i = 0; i < pos.length; i += 1) {
+
+        for (var j = 0; j < pos.length; j += 1) {
+
+          var row = pos[i];
+          var col = pos[j];
+
+          if (_modules[row][col] != null) {
+            continue;
+          }
+
+          for (var r = -2; r <= 2; r += 1) {
+
+            for (var c = -2; c <= 2; c += 1) {
+
+              if (r == -2 || r == 2 || c == -2 || c == 2
+                  || (r == 0 && c == 0) ) {
+                _modules[row + r][col + c] = true;
+              } else {
+                _modules[row + r][col + c] = false;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    var setupTypeNumber = function(test) {
+
+      var bits = QRUtil.getBCHTypeNumber(_typeNumber);
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[Math.floor(i / 3)][i % 3 + _moduleCount - 8 - 3] = mod;
+      }
+
+      for (var i = 0; i < 18; i += 1) {
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+        _modules[i % 3 + _moduleCount - 8 - 3][Math.floor(i / 3)] = mod;
+      }
+    };
+
+    var setupTypeInfo = function(test, maskPattern) {
+
+      var data = (_errorCorrectionLevel << 3) | maskPattern;
+      var bits = QRUtil.getBCHTypeInfo(data);
+
+      // vertical
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 6) {
+          _modules[i][8] = mod;
+        } else if (i < 8) {
+          _modules[i + 1][8] = mod;
+        } else {
+          _modules[_moduleCount - 15 + i][8] = mod;
+        }
+      }
+
+      // horizontal
+      for (var i = 0; i < 15; i += 1) {
+
+        var mod = (!test && ( (bits >> i) & 1) == 1);
+
+        if (i < 8) {
+          _modules[8][_moduleCount - i - 1] = mod;
+        } else if (i < 9) {
+          _modules[8][15 - i - 1 + 1] = mod;
+        } else {
+          _modules[8][15 - i - 1] = mod;
+        }
+      }
+
+      // fixed module
+      _modules[_moduleCount - 8][8] = (!test);
+    };
+
+    var mapData = function(data, maskPattern) {
+
+      var inc = -1;
+      var row = _moduleCount - 1;
+      var bitIndex = 7;
+      var byteIndex = 0;
+      var maskFunc = QRUtil.getMaskFunction(maskPattern);
+
+      for (var col = _moduleCount - 1; col > 0; col -= 2) {
+
+        if (col == 6) col -= 1;
+
+        while (true) {
+
+          for (var c = 0; c < 2; c += 1) {
+
+            if (_modules[row][col - c] == null) {
+
+              var dark = false;
+
+              if (byteIndex < data.length) {
+                dark = ( ( (data[byteIndex] >>> bitIndex) & 1) == 1);
+              }
+
+              var mask = maskFunc(row, col - c);
+
+              if (mask) {
+                dark = !dark;
+              }
+
+              _modules[row][col - c] = dark;
+              bitIndex -= 1;
+
+              if (bitIndex == -1) {
+                byteIndex += 1;
+                bitIndex = 7;
+              }
+            }
+          }
+
+          row += inc;
+
+          if (row < 0 || _moduleCount <= row) {
+            row -= inc;
+            inc = -inc;
+            break;
+          }
+        }
+      }
+    };
+
+    var createBytes = function(buffer, rsBlocks) {
+
+      var offset = 0;
+
+      var maxDcCount = 0;
+      var maxEcCount = 0;
+
+      var dcdata = new Array(rsBlocks.length);
+      var ecdata = new Array(rsBlocks.length);
+
+      for (var r = 0; r < rsBlocks.length; r += 1) {
+
+        var dcCount = rsBlocks[r].dataCount;
+        var ecCount = rsBlocks[r].totalCount - dcCount;
+
+        maxDcCount = Math.max(maxDcCount, dcCount);
+        maxEcCount = Math.max(maxEcCount, ecCount);
+
+        dcdata[r] = new Array(dcCount);
+
+        for (var i = 0; i < dcdata[r].length; i += 1) {
+          dcdata[r][i] = 0xff & buffer.getBuffer()[i + offset];
+        }
+        offset += dcCount;
+
+        var rsPoly = QRUtil.getErrorCorrectPolynomial(ecCount);
+        var rawPoly = qrPolynomial(dcdata[r], rsPoly.getLength() - 1);
+
+        var modPoly = rawPoly.mod(rsPoly);
+        ecdata[r] = new Array(rsPoly.getLength() - 1);
+        for (var i = 0; i < ecdata[r].length; i += 1) {
+          var modIndex = i + modPoly.getLength() - ecdata[r].length;
+          ecdata[r][i] = (modIndex >= 0)? modPoly.getAt(modIndex) : 0;
+        }
+      }
+
+      var totalCodeCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalCodeCount += rsBlocks[i].totalCount;
+      }
+
+      var data = new Array(totalCodeCount);
+      var index = 0;
+
+      for (var i = 0; i < maxDcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < dcdata[r].length) {
+            data[index] = dcdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      for (var i = 0; i < maxEcCount; i += 1) {
+        for (var r = 0; r < rsBlocks.length; r += 1) {
+          if (i < ecdata[r].length) {
+            data[index] = ecdata[r][i];
+            index += 1;
+          }
+        }
+      }
+
+      return data;
+    };
+
+    var createData = function(typeNumber, errorCorrectionLevel, dataList) {
+
+      var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, errorCorrectionLevel);
+
+      var buffer = qrBitBuffer();
+
+      for (var i = 0; i < dataList.length; i += 1) {
+        var data = dataList[i];
+        buffer.put(data.getMode(), 4);
+        buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+        data.write(buffer);
+      }
+
+      // calc num max data.
+      var totalDataCount = 0;
+      for (var i = 0; i < rsBlocks.length; i += 1) {
+        totalDataCount += rsBlocks[i].dataCount;
+      }
+
+      if (buffer.getLengthInBits() > totalDataCount * 8) {
+        throw 'code length overflow. ('
+          + buffer.getLengthInBits()
+          + '>'
+          + totalDataCount * 8
+          + ')';
+      }
+
+      // end code
+      if (buffer.getLengthInBits() + 4 <= totalDataCount * 8) {
+        buffer.put(0, 4);
+      }
+
+      // padding
+      while (buffer.getLengthInBits() % 8 != 0) {
+        buffer.putBit(false);
+      }
+
+      // padding
+      while (true) {
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD0, 8);
+
+        if (buffer.getLengthInBits() >= totalDataCount * 8) {
+          break;
+        }
+        buffer.put(PAD1, 8);
+      }
+
+      return createBytes(buffer, rsBlocks);
+    };
+
+    _this.addData = function(data, mode) {
+
+      mode = mode || 'Byte';
+
+      var newData = null;
+
+      switch(mode) {
+      case 'Numeric' :
+        newData = qrNumber(data);
+        break;
+      case 'Alphanumeric' :
+        newData = qrAlphaNum(data);
+        break;
+      case 'Byte' :
+        newData = qr8BitByte(data);
+        break;
+      case 'Kanji' :
+        newData = qrKanji(data);
+        break;
+      default :
+        throw 'mode:' + mode;
+      }
+
+      _dataList.push(newData);
+      _dataCache = null;
+    };
+
+    _this.isDark = function(row, col) {
+      if (row < 0 || _moduleCount <= row || col < 0 || _moduleCount <= col) {
+        throw row + ',' + col;
+      }
+      return _modules[row][col];
+    };
+
+    _this.getModuleCount = function() {
+      return _moduleCount;
+    };
+
+    _this.make = function() {
+      if (_typeNumber < 1) {
+        var typeNumber = 1;
+
+        for (; typeNumber < 40; typeNumber++) {
+          var rsBlocks = QRRSBlock.getRSBlocks(typeNumber, _errorCorrectionLevel);
+          var buffer = qrBitBuffer();
+
+          for (var i = 0; i < _dataList.length; i++) {
+            var data = _dataList[i];
+            buffer.put(data.getMode(), 4);
+            buffer.put(data.getLength(), QRUtil.getLengthInBits(data.getMode(), typeNumber) );
+            data.write(buffer);
+          }
+
+          var totalDataCount = 0;
+          for (var i = 0; i < rsBlocks.length; i++) {
+            totalDataCount += rsBlocks[i].dataCount;
+          }
+
+          if (buffer.getLengthInBits() <= totalDataCount * 8) {
+            break;
+          }
+        }
+
+        _typeNumber = typeNumber;
+      }
+
+      makeImpl(false, getBestMaskPattern() );
+    };
+
+    _this.createTableTag = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var qrHtml = '';
+
+      qrHtml += '<table style="';
+      qrHtml += ' border-width: 0px; border-style: none;';
+      qrHtml += ' border-collapse: collapse;';
+      qrHtml += ' padding: 0px; margin: ' + margin + 'px;';
+      qrHtml += '">';
+      qrHtml += '<tbody>';
+
+      for (var r = 0; r < _this.getModuleCount(); r += 1) {
+
+        qrHtml += '<tr>';
+
+        for (var c = 0; c < _this.getModuleCount(); c += 1) {
+          qrHtml += '<td style="';
+          qrHtml += ' border-width: 0px; border-style: none;';
+          qrHtml += ' border-collapse: collapse;';
+          qrHtml += ' padding: 0px; margin: 0px;';
+          qrHtml += ' width: ' + cellSize + 'px;';
+          qrHtml += ' height: ' + cellSize + 'px;';
+          qrHtml += ' background-color: ';
+          qrHtml += _this.isDark(r, c)? '#000000' : '#ffffff';
+          qrHtml += ';';
+          qrHtml += '"/>';
+        }
+
+        qrHtml += '</tr>';
+      }
+
+      qrHtml += '</tbody>';
+      qrHtml += '</table>';
+
+      return qrHtml;
+    };
+
+    _this.createSvgTag = function(cellSize, margin, alt, title) {
+
+      var opts = {};
+      if (typeof arguments[0] == 'object') {
+        // Called by options.
+        opts = arguments[0];
+        // overwrite cellSize and margin.
+        cellSize = opts.cellSize;
+        margin = opts.margin;
+        alt = opts.alt;
+        title = opts.title;
+      }
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      // Compose alt property surrogate
+      alt = (typeof alt === 'string') ? {text: alt} : alt || {};
+      alt.text = alt.text || null;
+      alt.id = (alt.text) ? alt.id || 'qrcode-description' : null;
+
+      // Compose title property surrogate
+      title = (typeof title === 'string') ? {text: title} : title || {};
+      title.text = title.text || null;
+      title.id = (title.text) ? title.id || 'qrcode-title' : null;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var c, mc, r, mr, qrSvg='', rect;
+
+      rect = 'l' + cellSize + ',0 0,' + cellSize +
+        ' -' + cellSize + ',0 0,-' + cellSize + 'z ';
+
+      qrSvg += '<svg version="1.1" xmlns="http://www.w3.org/2000/svg"';
+      qrSvg += !opts.scalable ? ' width="' + size + 'px" height="' + size + 'px"' : '';
+      qrSvg += ' viewBox="0 0 ' + size + ' ' + size + '" ';
+      qrSvg += ' preserveAspectRatio="xMinYMin meet"';
+      qrSvg += (title.text || alt.text) ? ' role="img" aria-labelledby="' +
+          escapeXml([title.id, alt.id].join(' ').trim() ) + '"' : '';
+      qrSvg += '>';
+      qrSvg += (title.text) ? '<title id="' + escapeXml(title.id) + '">' +
+          escapeXml(title.text) + '</title>' : '';
+      qrSvg += (alt.text) ? '<description id="' + escapeXml(alt.id) + '">' +
+          escapeXml(alt.text) + '</description>' : '';
+      qrSvg += '<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>';
+      qrSvg += '<path d="';
+
+      for (r = 0; r < _this.getModuleCount(); r += 1) {
+        mr = r * cellSize + margin;
+        for (c = 0; c < _this.getModuleCount(); c += 1) {
+          if (_this.isDark(r, c) ) {
+            mc = c*cellSize+margin;
+            qrSvg += 'M' + mc + ',' + mr + rect;
+          }
+        }
+      }
+
+      qrSvg += '" stroke="transparent" fill="black"/>';
+      qrSvg += '</svg>';
+
+      return qrSvg;
+    };
+
+    _this.createDataURL = function(cellSize, margin) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      return createDataURL(size, size, function(x, y) {
+        if (min <= x && x < max && min <= y && y < max) {
+          var c = Math.floor( (x - min) / cellSize);
+          var r = Math.floor( (y - min) / cellSize);
+          return _this.isDark(r, c)? 0 : 1;
+        } else {
+          return 1;
+        }
+      } );
+    };
+
+    _this.createImgTag = function(cellSize, margin, alt) {
+
+      cellSize = cellSize || 2;
+      margin = (typeof margin == 'undefined')? cellSize * 4 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+
+      var img = '';
+      img += '<img';
+      img += '\u0020src="';
+      img += _this.createDataURL(cellSize, margin);
+      img += '"';
+      img += '\u0020width="';
+      img += size;
+      img += '"';
+      img += '\u0020height="';
+      img += size;
+      img += '"';
+      if (alt) {
+        img += '\u0020alt="';
+        img += escapeXml(alt);
+        img += '"';
+      }
+      img += '/>';
+
+      return img;
+    };
+
+    var escapeXml = function(s) {
+      var escaped = '';
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charAt(i);
+        switch(c) {
+        case '<': escaped += '&lt;'; break;
+        case '>': escaped += '&gt;'; break;
+        case '&': escaped += '&amp;'; break;
+        case '"': escaped += '&quot;'; break;
+        default : escaped += c; break;
+        }
+      }
+      return escaped;
+    };
+
+    var _createHalfASCII = function(margin) {
+      var cellSize = 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r1, r2, p;
+
+      var blocks = {
+        '██': '█',
+        '█ ': '▀',
+        ' █': '▄',
+        '  ': ' '
+      };
+
+      var blocksLastLineNoMargin = {
+        '██': '▀',
+        '█ ': '▀',
+        ' █': ' ',
+        '  ': ' '
+      };
+
+      var ascii = '';
+      for (y = 0; y < size; y += 2) {
+        r1 = Math.floor((y - min) / cellSize);
+        r2 = Math.floor((y + 1 - min) / cellSize);
+        for (x = 0; x < size; x += 1) {
+          p = '█';
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r1, Math.floor((x - min) / cellSize))) {
+            p = ' ';
+          }
+
+          if (min <= x && x < max && min <= y+1 && y+1 < max && _this.isDark(r2, Math.floor((x - min) / cellSize))) {
+            p += ' ';
+          }
+          else {
+            p += '█';
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          ascii += (margin < 1 && y+1 >= max) ? blocksLastLineNoMargin[p] : blocks[p];
+        }
+
+        ascii += '\n';
+      }
+
+      if (size % 2 && margin > 0) {
+        return ascii.substring(0, ascii.length - size - 1) + Array(size+1).join('▀');
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.createASCII = function(cellSize, margin) {
+      cellSize = cellSize || 1;
+
+      if (cellSize < 2) {
+        return _createHalfASCII(margin);
+      }
+
+      cellSize -= 1;
+      margin = (typeof margin == 'undefined')? cellSize * 2 : margin;
+
+      var size = _this.getModuleCount() * cellSize + margin * 2;
+      var min = margin;
+      var max = size - margin;
+
+      var y, x, r, p;
+
+      var white = Array(cellSize+1).join('██');
+      var black = Array(cellSize+1).join('  ');
+
+      var ascii = '';
+      var line = '';
+      for (y = 0; y < size; y += 1) {
+        r = Math.floor( (y - min) / cellSize);
+        line = '';
+        for (x = 0; x < size; x += 1) {
+          p = 1;
+
+          if (min <= x && x < max && min <= y && y < max && _this.isDark(r, Math.floor((x - min) / cellSize))) {
+            p = 0;
+          }
+
+          // Output 2 characters per pixel, to create full square. 1 character per pixels gives only half width of square.
+          line += p ? white : black;
+        }
+
+        for (r = 0; r < cellSize; r += 1) {
+          ascii += line + '\n';
+        }
+      }
+
+      return ascii.substring(0, ascii.length-1);
+    };
+
+    _this.renderTo2dContext = function(context, cellSize) {
+      cellSize = cellSize || 2;
+      var length = _this.getModuleCount();
+      for (var row = 0; row < length; row++) {
+        for (var col = 0; col < length; col++) {
+          context.fillStyle = _this.isDark(row, col) ? 'black' : 'white';
+          context.fillRect(row * cellSize, col * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrcode.stringToBytes
+  //---------------------------------------------------------------------
+
+  qrcode.stringToBytesFuncs = {
+    'default' : function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        bytes.push(c & 0xff);
+      }
+      return bytes;
+    }
+  };
+
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['default'];
+
+  //---------------------------------------------------------------------
+  // qrcode.createStringToBytes
+  //---------------------------------------------------------------------
+
+  /**
+   * @param unicodeData base64 string of byte array.
+   * [16bit Unicode],[16bit Bytes], ...
+   * @param numChars
+   */
+  qrcode.createStringToBytes = function(unicodeData, numChars) {
+
+    // create conversion map.
+
+    var unicodeMap = function() {
+
+      var bin = base64DecodeInputStream(unicodeData);
+      var read = function() {
+        var b = bin.read();
+        if (b == -1) throw 'eof';
+        return b;
+      };
+
+      var count = 0;
+      var unicodeMap = {};
+      while (true) {
+        var b0 = bin.read();
+        if (b0 == -1) break;
+        var b1 = read();
+        var b2 = read();
+        var b3 = read();
+        var k = String.fromCharCode( (b0 << 8) | b1);
+        var v = (b2 << 8) | b3;
+        unicodeMap[k] = v;
+        count += 1;
+      }
+      if (count != numChars) {
+        throw count + ' != ' + numChars;
+      }
+
+      return unicodeMap;
+    }();
+
+    var unknownChar = '?'.charCodeAt(0);
+
+    return function(s) {
+      var bytes = [];
+      for (var i = 0; i < s.length; i += 1) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+          bytes.push(c);
+        } else {
+          var b = unicodeMap[s.charAt(i)];
+          if (typeof b == 'number') {
+            if ( (b & 0xff) == b) {
+              // 1byte
+              bytes.push(b);
+            } else {
+              // 2bytes
+              bytes.push(b >>> 8);
+              bytes.push(b & 0xff);
+            }
+          } else {
+            bytes.push(unknownChar);
+          }
+        }
+      }
+      return bytes;
+    };
+  };
+
+  //---------------------------------------------------------------------
+  // QRMode
+  //---------------------------------------------------------------------
+
+  var QRMode = {
+    MODE_NUMBER :    1 << 0,
+    MODE_ALPHA_NUM : 1 << 1,
+    MODE_8BIT_BYTE : 1 << 2,
+    MODE_KANJI :     1 << 3
+  };
+
+  //---------------------------------------------------------------------
+  // QRErrorCorrectionLevel
+  //---------------------------------------------------------------------
+
+  var QRErrorCorrectionLevel = {
+    L : 1,
+    M : 0,
+    Q : 3,
+    H : 2
+  };
+
+  //---------------------------------------------------------------------
+  // QRMaskPattern
+  //---------------------------------------------------------------------
+
+  var QRMaskPattern = {
+    PATTERN000 : 0,
+    PATTERN001 : 1,
+    PATTERN010 : 2,
+    PATTERN011 : 3,
+    PATTERN100 : 4,
+    PATTERN101 : 5,
+    PATTERN110 : 6,
+    PATTERN111 : 7
+  };
+
+  //---------------------------------------------------------------------
+  // QRUtil
+  //---------------------------------------------------------------------
+
+  var QRUtil = function() {
+
+    var PATTERN_POSITION_TABLE = [
+      [],
+      [6, 18],
+      [6, 22],
+      [6, 26],
+      [6, 30],
+      [6, 34],
+      [6, 22, 38],
+      [6, 24, 42],
+      [6, 26, 46],
+      [6, 28, 50],
+      [6, 30, 54],
+      [6, 32, 58],
+      [6, 34, 62],
+      [6, 26, 46, 66],
+      [6, 26, 48, 70],
+      [6, 26, 50, 74],
+      [6, 30, 54, 78],
+      [6, 30, 56, 82],
+      [6, 30, 58, 86],
+      [6, 34, 62, 90],
+      [6, 28, 50, 72, 94],
+      [6, 26, 50, 74, 98],
+      [6, 30, 54, 78, 102],
+      [6, 28, 54, 80, 106],
+      [6, 32, 58, 84, 110],
+      [6, 30, 58, 86, 114],
+      [6, 34, 62, 90, 118],
+      [6, 26, 50, 74, 98, 122],
+      [6, 30, 54, 78, 102, 126],
+      [6, 26, 52, 78, 104, 130],
+      [6, 30, 56, 82, 108, 134],
+      [6, 34, 60, 86, 112, 138],
+      [6, 30, 58, 86, 114, 142],
+      [6, 34, 62, 90, 118, 146],
+      [6, 30, 54, 78, 102, 126, 150],
+      [6, 24, 50, 76, 102, 128, 154],
+      [6, 28, 54, 80, 106, 132, 158],
+      [6, 32, 58, 84, 110, 136, 162],
+      [6, 26, 54, 82, 110, 138, 166],
+      [6, 30, 58, 86, 114, 142, 170]
+    ];
+    var G15 = (1 << 10) | (1 << 8) | (1 << 5) | (1 << 4) | (1 << 2) | (1 << 1) | (1 << 0);
+    var G18 = (1 << 12) | (1 << 11) | (1 << 10) | (1 << 9) | (1 << 8) | (1 << 5) | (1 << 2) | (1 << 0);
+    var G15_MASK = (1 << 14) | (1 << 12) | (1 << 10) | (1 << 4) | (1 << 1);
+
+    var _this = {};
+
+    var getBCHDigit = function(data) {
+      var digit = 0;
+      while (data != 0) {
+        digit += 1;
+        data >>>= 1;
+      }
+      return digit;
+    };
+
+    _this.getBCHTypeInfo = function(data) {
+      var d = data << 10;
+      while (getBCHDigit(d) - getBCHDigit(G15) >= 0) {
+        d ^= (G15 << (getBCHDigit(d) - getBCHDigit(G15) ) );
+      }
+      return ( (data << 10) | d) ^ G15_MASK;
+    };
+
+    _this.getBCHTypeNumber = function(data) {
+      var d = data << 12;
+      while (getBCHDigit(d) - getBCHDigit(G18) >= 0) {
+        d ^= (G18 << (getBCHDigit(d) - getBCHDigit(G18) ) );
+      }
+      return (data << 12) | d;
+    };
+
+    _this.getPatternPosition = function(typeNumber) {
+      return PATTERN_POSITION_TABLE[typeNumber - 1];
+    };
+
+    _this.getMaskFunction = function(maskPattern) {
+
+      switch (maskPattern) {
+
+      case QRMaskPattern.PATTERN000 :
+        return function(i, j) { return (i + j) % 2 == 0; };
+      case QRMaskPattern.PATTERN001 :
+        return function(i, j) { return i % 2 == 0; };
+      case QRMaskPattern.PATTERN010 :
+        return function(i, j) { return j % 3 == 0; };
+      case QRMaskPattern.PATTERN011 :
+        return function(i, j) { return (i + j) % 3 == 0; };
+      case QRMaskPattern.PATTERN100 :
+        return function(i, j) { return (Math.floor(i / 2) + Math.floor(j / 3) ) % 2 == 0; };
+      case QRMaskPattern.PATTERN101 :
+        return function(i, j) { return (i * j) % 2 + (i * j) % 3 == 0; };
+      case QRMaskPattern.PATTERN110 :
+        return function(i, j) { return ( (i * j) % 2 + (i * j) % 3) % 2 == 0; };
+      case QRMaskPattern.PATTERN111 :
+        return function(i, j) { return ( (i * j) % 3 + (i + j) % 2) % 2 == 0; };
+
+      default :
+        throw 'bad maskPattern:' + maskPattern;
+      }
+    };
+
+    _this.getErrorCorrectPolynomial = function(errorCorrectLength) {
+      var a = qrPolynomial([1], 0);
+      for (var i = 0; i < errorCorrectLength; i += 1) {
+        a = a.multiply(qrPolynomial([1, QRMath.gexp(i)], 0) );
+      }
+      return a;
+    };
+
+    _this.getLengthInBits = function(mode, type) {
+
+      if (1 <= type && type < 10) {
+
+        // 1 - 9
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 10;
+        case QRMode.MODE_ALPHA_NUM : return 9;
+        case QRMode.MODE_8BIT_BYTE : return 8;
+        case QRMode.MODE_KANJI     : return 8;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 27) {
+
+        // 10 - 26
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 12;
+        case QRMode.MODE_ALPHA_NUM : return 11;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 10;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else if (type < 41) {
+
+        // 27 - 40
+
+        switch(mode) {
+        case QRMode.MODE_NUMBER    : return 14;
+        case QRMode.MODE_ALPHA_NUM : return 13;
+        case QRMode.MODE_8BIT_BYTE : return 16;
+        case QRMode.MODE_KANJI     : return 12;
+        default :
+          throw 'mode:' + mode;
+        }
+
+      } else {
+        throw 'type:' + type;
+      }
+    };
+
+    _this.getLostPoint = function(qrcode) {
+
+      var moduleCount = qrcode.getModuleCount();
+
+      var lostPoint = 0;
+
+      // LEVEL1
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount; col += 1) {
+
+          var sameCount = 0;
+          var dark = qrcode.isDark(row, col);
+
+          for (var r = -1; r <= 1; r += 1) {
+
+            if (row + r < 0 || moduleCount <= row + r) {
+              continue;
+            }
+
+            for (var c = -1; c <= 1; c += 1) {
+
+              if (col + c < 0 || moduleCount <= col + c) {
+                continue;
+              }
+
+              if (r == 0 && c == 0) {
+                continue;
+              }
+
+              if (dark == qrcode.isDark(row + r, col + c) ) {
+                sameCount += 1;
+              }
+            }
+          }
+
+          if (sameCount > 5) {
+            lostPoint += (3 + sameCount - 5);
+          }
+        }
+      };
+
+      // LEVEL2
+
+      for (var row = 0; row < moduleCount - 1; row += 1) {
+        for (var col = 0; col < moduleCount - 1; col += 1) {
+          var count = 0;
+          if (qrcode.isDark(row, col) ) count += 1;
+          if (qrcode.isDark(row + 1, col) ) count += 1;
+          if (qrcode.isDark(row, col + 1) ) count += 1;
+          if (qrcode.isDark(row + 1, col + 1) ) count += 1;
+          if (count == 0 || count == 4) {
+            lostPoint += 3;
+          }
+        }
+      }
+
+      // LEVEL3
+
+      for (var row = 0; row < moduleCount; row += 1) {
+        for (var col = 0; col < moduleCount - 6; col += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row, col + 1)
+              &&  qrcode.isDark(row, col + 2)
+              &&  qrcode.isDark(row, col + 3)
+              &&  qrcode.isDark(row, col + 4)
+              && !qrcode.isDark(row, col + 5)
+              &&  qrcode.isDark(row, col + 6) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount - 6; row += 1) {
+          if (qrcode.isDark(row, col)
+              && !qrcode.isDark(row + 1, col)
+              &&  qrcode.isDark(row + 2, col)
+              &&  qrcode.isDark(row + 3, col)
+              &&  qrcode.isDark(row + 4, col)
+              && !qrcode.isDark(row + 5, col)
+              &&  qrcode.isDark(row + 6, col) ) {
+            lostPoint += 40;
+          }
+        }
+      }
+
+      // LEVEL4
+
+      var darkCount = 0;
+
+      for (var col = 0; col < moduleCount; col += 1) {
+        for (var row = 0; row < moduleCount; row += 1) {
+          if (qrcode.isDark(row, col) ) {
+            darkCount += 1;
+          }
+        }
+      }
+
+      var ratio = Math.abs(100 * darkCount / moduleCount / moduleCount - 50) / 5;
+      lostPoint += ratio * 10;
+
+      return lostPoint;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // QRMath
+  //---------------------------------------------------------------------
+
+  var QRMath = function() {
+
+    var EXP_TABLE = new Array(256);
+    var LOG_TABLE = new Array(256);
+
+    // initialize tables
+    for (var i = 0; i < 8; i += 1) {
+      EXP_TABLE[i] = 1 << i;
+    }
+    for (var i = 8; i < 256; i += 1) {
+      EXP_TABLE[i] = EXP_TABLE[i - 4]
+        ^ EXP_TABLE[i - 5]
+        ^ EXP_TABLE[i - 6]
+        ^ EXP_TABLE[i - 8];
+    }
+    for (var i = 0; i < 255; i += 1) {
+      LOG_TABLE[EXP_TABLE[i] ] = i;
+    }
+
+    var _this = {};
+
+    _this.glog = function(n) {
+
+      if (n < 1) {
+        throw 'glog(' + n + ')';
+      }
+
+      return LOG_TABLE[n];
+    };
+
+    _this.gexp = function(n) {
+
+      while (n < 0) {
+        n += 255;
+      }
+
+      while (n >= 256) {
+        n -= 255;
+      }
+
+      return EXP_TABLE[n];
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrPolynomial
+  //---------------------------------------------------------------------
+
+  function qrPolynomial(num, shift) {
+
+    if (typeof num.length == 'undefined') {
+      throw num.length + '/' + shift;
+    }
+
+    var _num = function() {
+      var offset = 0;
+      while (offset < num.length && num[offset] == 0) {
+        offset += 1;
+      }
+      var _num = new Array(num.length - offset + shift);
+      for (var i = 0; i < num.length - offset; i += 1) {
+        _num[i] = num[i + offset];
+      }
+      return _num;
+    }();
+
+    var _this = {};
+
+    _this.getAt = function(index) {
+      return _num[index];
+    };
+
+    _this.getLength = function() {
+      return _num.length;
+    };
+
+    _this.multiply = function(e) {
+
+      var num = new Array(_this.getLength() + e.getLength() - 1);
+
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        for (var j = 0; j < e.getLength(); j += 1) {
+          num[i + j] ^= QRMath.gexp(QRMath.glog(_this.getAt(i) ) + QRMath.glog(e.getAt(j) ) );
+        }
+      }
+
+      return qrPolynomial(num, 0);
+    };
+
+    _this.mod = function(e) {
+
+      if (_this.getLength() - e.getLength() < 0) {
+        return _this;
+      }
+
+      var ratio = QRMath.glog(_this.getAt(0) ) - QRMath.glog(e.getAt(0) );
+
+      var num = new Array(_this.getLength() );
+      for (var i = 0; i < _this.getLength(); i += 1) {
+        num[i] = _this.getAt(i);
+      }
+
+      for (var i = 0; i < e.getLength(); i += 1) {
+        num[i] ^= QRMath.gexp(QRMath.glog(e.getAt(i) ) + ratio);
+      }
+
+      // recursive call
+      return qrPolynomial(num, 0).mod(e);
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // QRRSBlock
+  //---------------------------------------------------------------------
+
+  var QRRSBlock = function() {
+
+    var RS_BLOCK_TABLE = [
+
+      // L
+      // M
+      // Q
+      // H
+
+      // 1
+      [1, 26, 19],
+      [1, 26, 16],
+      [1, 26, 13],
+      [1, 26, 9],
+
+      // 2
+      [1, 44, 34],
+      [1, 44, 28],
+      [1, 44, 22],
+      [1, 44, 16],
+
+      // 3
+      [1, 70, 55],
+      [1, 70, 44],
+      [2, 35, 17],
+      [2, 35, 13],
+
+      // 4
+      [1, 100, 80],
+      [2, 50, 32],
+      [2, 50, 24],
+      [4, 25, 9],
+
+      // 5
+      [1, 134, 108],
+      [2, 67, 43],
+      [2, 33, 15, 2, 34, 16],
+      [2, 33, 11, 2, 34, 12],
+
+      // 6
+      [2, 86, 68],
+      [4, 43, 27],
+      [4, 43, 19],
+      [4, 43, 15],
+
+      // 7
+      [2, 98, 78],
+      [4, 49, 31],
+      [2, 32, 14, 4, 33, 15],
+      [4, 39, 13, 1, 40, 14],
+
+      // 8
+      [2, 121, 97],
+      [2, 60, 38, 2, 61, 39],
+      [4, 40, 18, 2, 41, 19],
+      [4, 40, 14, 2, 41, 15],
+
+      // 9
+      [2, 146, 116],
+      [3, 58, 36, 2, 59, 37],
+      [4, 36, 16, 4, 37, 17],
+      [4, 36, 12, 4, 37, 13],
+
+      // 10
+      [2, 86, 68, 2, 87, 69],
+      [4, 69, 43, 1, 70, 44],
+      [6, 43, 19, 2, 44, 20],
+      [6, 43, 15, 2, 44, 16],
+
+      // 11
+      [4, 101, 81],
+      [1, 80, 50, 4, 81, 51],
+      [4, 50, 22, 4, 51, 23],
+      [3, 36, 12, 8, 37, 13],
+
+      // 12
+      [2, 116, 92, 2, 117, 93],
+      [6, 58, 36, 2, 59, 37],
+      [4, 46, 20, 6, 47, 21],
+      [7, 42, 14, 4, 43, 15],
+
+      // 13
+      [4, 133, 107],
+      [8, 59, 37, 1, 60, 38],
+      [8, 44, 20, 4, 45, 21],
+      [12, 33, 11, 4, 34, 12],
+
+      // 14
+      [3, 145, 115, 1, 146, 116],
+      [4, 64, 40, 5, 65, 41],
+      [11, 36, 16, 5, 37, 17],
+      [11, 36, 12, 5, 37, 13],
+
+      // 15
+      [5, 109, 87, 1, 110, 88],
+      [5, 65, 41, 5, 66, 42],
+      [5, 54, 24, 7, 55, 25],
+      [11, 36, 12, 7, 37, 13],
+
+      // 16
+      [5, 122, 98, 1, 123, 99],
+      [7, 73, 45, 3, 74, 46],
+      [15, 43, 19, 2, 44, 20],
+      [3, 45, 15, 13, 46, 16],
+
+      // 17
+      [1, 135, 107, 5, 136, 108],
+      [10, 74, 46, 1, 75, 47],
+      [1, 50, 22, 15, 51, 23],
+      [2, 42, 14, 17, 43, 15],
+
+      // 18
+      [5, 150, 120, 1, 151, 121],
+      [9, 69, 43, 4, 70, 44],
+      [17, 50, 22, 1, 51, 23],
+      [2, 42, 14, 19, 43, 15],
+
+      // 19
+      [3, 141, 113, 4, 142, 114],
+      [3, 70, 44, 11, 71, 45],
+      [17, 47, 21, 4, 48, 22],
+      [9, 39, 13, 16, 40, 14],
+
+      // 20
+      [3, 135, 107, 5, 136, 108],
+      [3, 67, 41, 13, 68, 42],
+      [15, 54, 24, 5, 55, 25],
+      [15, 43, 15, 10, 44, 16],
+
+      // 21
+      [4, 144, 116, 4, 145, 117],
+      [17, 68, 42],
+      [17, 50, 22, 6, 51, 23],
+      [19, 46, 16, 6, 47, 17],
+
+      // 22
+      [2, 139, 111, 7, 140, 112],
+      [17, 74, 46],
+      [7, 54, 24, 16, 55, 25],
+      [34, 37, 13],
+
+      // 23
+      [4, 151, 121, 5, 152, 122],
+      [4, 75, 47, 14, 76, 48],
+      [11, 54, 24, 14, 55, 25],
+      [16, 45, 15, 14, 46, 16],
+
+      // 24
+      [6, 147, 117, 4, 148, 118],
+      [6, 73, 45, 14, 74, 46],
+      [11, 54, 24, 16, 55, 25],
+      [30, 46, 16, 2, 47, 17],
+
+      // 25
+      [8, 132, 106, 4, 133, 107],
+      [8, 75, 47, 13, 76, 48],
+      [7, 54, 24, 22, 55, 25],
+      [22, 45, 15, 13, 46, 16],
+
+      // 26
+      [10, 142, 114, 2, 143, 115],
+      [19, 74, 46, 4, 75, 47],
+      [28, 50, 22, 6, 51, 23],
+      [33, 46, 16, 4, 47, 17],
+
+      // 27
+      [8, 152, 122, 4, 153, 123],
+      [22, 73, 45, 3, 74, 46],
+      [8, 53, 23, 26, 54, 24],
+      [12, 45, 15, 28, 46, 16],
+
+      // 28
+      [3, 147, 117, 10, 148, 118],
+      [3, 73, 45, 23, 74, 46],
+      [4, 54, 24, 31, 55, 25],
+      [11, 45, 15, 31, 46, 16],
+
+      // 29
+      [7, 146, 116, 7, 147, 117],
+      [21, 73, 45, 7, 74, 46],
+      [1, 53, 23, 37, 54, 24],
+      [19, 45, 15, 26, 46, 16],
+
+      // 30
+      [5, 145, 115, 10, 146, 116],
+      [19, 75, 47, 10, 76, 48],
+      [15, 54, 24, 25, 55, 25],
+      [23, 45, 15, 25, 46, 16],
+
+      // 31
+      [13, 145, 115, 3, 146, 116],
+      [2, 74, 46, 29, 75, 47],
+      [42, 54, 24, 1, 55, 25],
+      [23, 45, 15, 28, 46, 16],
+
+      // 32
+      [17, 145, 115],
+      [10, 74, 46, 23, 75, 47],
+      [10, 54, 24, 35, 55, 25],
+      [19, 45, 15, 35, 46, 16],
+
+      // 33
+      [17, 145, 115, 1, 146, 116],
+      [14, 74, 46, 21, 75, 47],
+      [29, 54, 24, 19, 55, 25],
+      [11, 45, 15, 46, 46, 16],
+
+      // 34
+      [13, 145, 115, 6, 146, 116],
+      [14, 74, 46, 23, 75, 47],
+      [44, 54, 24, 7, 55, 25],
+      [59, 46, 16, 1, 47, 17],
+
+      // 35
+      [12, 151, 121, 7, 152, 122],
+      [12, 75, 47, 26, 76, 48],
+      [39, 54, 24, 14, 55, 25],
+      [22, 45, 15, 41, 46, 16],
+
+      // 36
+      [6, 151, 121, 14, 152, 122],
+      [6, 75, 47, 34, 76, 48],
+      [46, 54, 24, 10, 55, 25],
+      [2, 45, 15, 64, 46, 16],
+
+      // 37
+      [17, 152, 122, 4, 153, 123],
+      [29, 74, 46, 14, 75, 47],
+      [49, 54, 24, 10, 55, 25],
+      [24, 45, 15, 46, 46, 16],
+
+      // 38
+      [4, 152, 122, 18, 153, 123],
+      [13, 74, 46, 32, 75, 47],
+      [48, 54, 24, 14, 55, 25],
+      [42, 45, 15, 32, 46, 16],
+
+      // 39
+      [20, 147, 117, 4, 148, 118],
+      [40, 75, 47, 7, 76, 48],
+      [43, 54, 24, 22, 55, 25],
+      [10, 45, 15, 67, 46, 16],
+
+      // 40
+      [19, 148, 118, 6, 149, 119],
+      [18, 75, 47, 31, 76, 48],
+      [34, 54, 24, 34, 55, 25],
+      [20, 45, 15, 61, 46, 16]
+    ];
+
+    var qrRSBlock = function(totalCount, dataCount) {
+      var _this = {};
+      _this.totalCount = totalCount;
+      _this.dataCount = dataCount;
+      return _this;
+    };
+
+    var _this = {};
+
+    var getRsBlockTable = function(typeNumber, errorCorrectionLevel) {
+
+      switch(errorCorrectionLevel) {
+      case QRErrorCorrectionLevel.L :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 0];
+      case QRErrorCorrectionLevel.M :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 1];
+      case QRErrorCorrectionLevel.Q :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 2];
+      case QRErrorCorrectionLevel.H :
+        return RS_BLOCK_TABLE[(typeNumber - 1) * 4 + 3];
+      default :
+        return undefined;
+      }
+    };
+
+    _this.getRSBlocks = function(typeNumber, errorCorrectionLevel) {
+
+      var rsBlock = getRsBlockTable(typeNumber, errorCorrectionLevel);
+
+      if (typeof rsBlock == 'undefined') {
+        throw 'bad rs block @ typeNumber:' + typeNumber +
+            '/errorCorrectionLevel:' + errorCorrectionLevel;
+      }
+
+      var length = rsBlock.length / 3;
+
+      var list = [];
+
+      for (var i = 0; i < length; i += 1) {
+
+        var count = rsBlock[i * 3 + 0];
+        var totalCount = rsBlock[i * 3 + 1];
+        var dataCount = rsBlock[i * 3 + 2];
+
+        for (var j = 0; j < count; j += 1) {
+          list.push(qrRSBlock(totalCount, dataCount) );
+        }
+      }
+
+      return list;
+    };
+
+    return _this;
+  }();
+
+  //---------------------------------------------------------------------
+  // qrBitBuffer
+  //---------------------------------------------------------------------
+
+  var qrBitBuffer = function() {
+
+    var _buffer = [];
+    var _length = 0;
+
+    var _this = {};
+
+    _this.getBuffer = function() {
+      return _buffer;
+    };
+
+    _this.getAt = function(index) {
+      var bufIndex = Math.floor(index / 8);
+      return ( (_buffer[bufIndex] >>> (7 - index % 8) ) & 1) == 1;
+    };
+
+    _this.put = function(num, length) {
+      for (var i = 0; i < length; i += 1) {
+        _this.putBit( ( (num >>> (length - i - 1) ) & 1) == 1);
+      }
+    };
+
+    _this.getLengthInBits = function() {
+      return _length;
+    };
+
+    _this.putBit = function(bit) {
+
+      var bufIndex = Math.floor(_length / 8);
+      if (_buffer.length <= bufIndex) {
+        _buffer.push(0);
+      }
+
+      if (bit) {
+        _buffer[bufIndex] |= (0x80 >>> (_length % 8) );
+      }
+
+      _length += 1;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrNumber
+  //---------------------------------------------------------------------
+
+  var qrNumber = function(data) {
+
+    var _mode = QRMode.MODE_NUMBER;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _data;
+
+      var i = 0;
+
+      while (i + 2 < data.length) {
+        buffer.put(strToNum(data.substring(i, i + 3) ), 10);
+        i += 3;
+      }
+
+      if (i < data.length) {
+        if (data.length - i == 1) {
+          buffer.put(strToNum(data.substring(i, i + 1) ), 4);
+        } else if (data.length - i == 2) {
+          buffer.put(strToNum(data.substring(i, i + 2) ), 7);
+        }
+      }
+    };
+
+    var strToNum = function(s) {
+      var num = 0;
+      for (var i = 0; i < s.length; i += 1) {
+        num = num * 10 + chatToNum(s.charAt(i) );
+      }
+      return num;
+    };
+
+    var chatToNum = function(c) {
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      }
+      throw 'illegal char :' + c;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrAlphaNum
+  //---------------------------------------------------------------------
+
+  var qrAlphaNum = function(data) {
+
+    var _mode = QRMode.MODE_ALPHA_NUM;
+    var _data = data;
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _data.length;
+    };
+
+    _this.write = function(buffer) {
+
+      var s = _data;
+
+      var i = 0;
+
+      while (i + 1 < s.length) {
+        buffer.put(
+          getCode(s.charAt(i) ) * 45 +
+          getCode(s.charAt(i + 1) ), 11);
+        i += 2;
+      }
+
+      if (i < s.length) {
+        buffer.put(getCode(s.charAt(i) ), 6);
+      }
+    };
+
+    var getCode = function(c) {
+
+      if ('0' <= c && c <= '9') {
+        return c.charCodeAt(0) - '0'.charCodeAt(0);
+      } else if ('A' <= c && c <= 'Z') {
+        return c.charCodeAt(0) - 'A'.charCodeAt(0) + 10;
+      } else {
+        switch (c) {
+        case ' ' : return 36;
+        case '$' : return 37;
+        case '%' : return 38;
+        case '*' : return 39;
+        case '+' : return 40;
+        case '-' : return 41;
+        case '.' : return 42;
+        case '/' : return 43;
+        case ':' : return 44;
+        default :
+          throw 'illegal char :' + c;
+        }
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qr8BitByte
+  //---------------------------------------------------------------------
+
+  var qr8BitByte = function(data) {
+
+    var _mode = QRMode.MODE_8BIT_BYTE;
+    var _data = data;
+    var _bytes = qrcode.stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return _bytes.length;
+    };
+
+    _this.write = function(buffer) {
+      for (var i = 0; i < _bytes.length; i += 1) {
+        buffer.put(_bytes[i], 8);
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // qrKanji
+  //---------------------------------------------------------------------
+
+  var qrKanji = function(data) {
+
+    var _mode = QRMode.MODE_KANJI;
+    var _data = data;
+
+    var stringToBytes = qrcode.stringToBytesFuncs['SJIS'];
+    if (!stringToBytes) {
+      throw 'sjis not supported.';
+    }
+    !function(c, code) {
+      // self test for sjis support.
+      var test = stringToBytes(c);
+      if (test.length != 2 || ( (test[0] << 8) | test[1]) != code) {
+        throw 'sjis not supported.';
+      }
+    }('\u53cb', 0x9746);
+
+    var _bytes = stringToBytes(data);
+
+    var _this = {};
+
+    _this.getMode = function() {
+      return _mode;
+    };
+
+    _this.getLength = function(buffer) {
+      return ~~(_bytes.length / 2);
+    };
+
+    _this.write = function(buffer) {
+
+      var data = _bytes;
+
+      var i = 0;
+
+      while (i + 1 < data.length) {
+
+        var c = ( (0xff & data[i]) << 8) | (0xff & data[i + 1]);
+
+        if (0x8140 <= c && c <= 0x9FFC) {
+          c -= 0x8140;
+        } else if (0xE040 <= c && c <= 0xEBBF) {
+          c -= 0xC140;
+        } else {
+          throw 'illegal char at ' + (i + 1) + '/' + c;
+        }
+
+        c = ( (c >>> 8) & 0xff) * 0xC0 + (c & 0xff);
+
+        buffer.put(c, 13);
+
+        i += 2;
+      }
+
+      if (i < data.length) {
+        throw 'illegal char at ' + (i + 1);
+      }
+    };
+
+    return _this;
+  };
+
+  //=====================================================================
+  // GIF Support etc.
+  //
+
+  //---------------------------------------------------------------------
+  // byteArrayOutputStream
+  //---------------------------------------------------------------------
+
+  var byteArrayOutputStream = function() {
+
+    var _bytes = [];
+
+    var _this = {};
+
+    _this.writeByte = function(b) {
+      _bytes.push(b & 0xff);
+    };
+
+    _this.writeShort = function(i) {
+      _this.writeByte(i);
+      _this.writeByte(i >>> 8);
+    };
+
+    _this.writeBytes = function(b, off, len) {
+      off = off || 0;
+      len = len || b.length;
+      for (var i = 0; i < len; i += 1) {
+        _this.writeByte(b[i + off]);
+      }
+    };
+
+    _this.writeString = function(s) {
+      for (var i = 0; i < s.length; i += 1) {
+        _this.writeByte(s.charCodeAt(i) );
+      }
+    };
+
+    _this.toByteArray = function() {
+      return _bytes;
+    };
+
+    _this.toString = function() {
+      var s = '';
+      s += '[';
+      for (var i = 0; i < _bytes.length; i += 1) {
+        if (i > 0) {
+          s += ',';
+        }
+        s += _bytes[i];
+      }
+      s += ']';
+      return s;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64EncodeOutputStream
+  //---------------------------------------------------------------------
+
+  var base64EncodeOutputStream = function() {
+
+    var _buffer = 0;
+    var _buflen = 0;
+    var _length = 0;
+    var _base64 = '';
+
+    var _this = {};
+
+    var writeEncoded = function(b) {
+      _base64 += String.fromCharCode(encode(b & 0x3f) );
+    };
+
+    var encode = function(n) {
+      if (n < 0) {
+        // error.
+      } else if (n < 26) {
+        return 0x41 + n;
+      } else if (n < 52) {
+        return 0x61 + (n - 26);
+      } else if (n < 62) {
+        return 0x30 + (n - 52);
+      } else if (n == 62) {
+        return 0x2b;
+      } else if (n == 63) {
+        return 0x2f;
+      }
+      throw 'n:' + n;
+    };
+
+    _this.writeByte = function(n) {
+
+      _buffer = (_buffer << 8) | (n & 0xff);
+      _buflen += 8;
+      _length += 1;
+
+      while (_buflen >= 6) {
+        writeEncoded(_buffer >>> (_buflen - 6) );
+        _buflen -= 6;
+      }
+    };
+
+    _this.flush = function() {
+
+      if (_buflen > 0) {
+        writeEncoded(_buffer << (6 - _buflen) );
+        _buffer = 0;
+        _buflen = 0;
+      }
+
+      if (_length % 3 != 0) {
+        // padding
+        var padlen = 3 - _length % 3;
+        for (var i = 0; i < padlen; i += 1) {
+          _base64 += '=';
+        }
+      }
+    };
+
+    _this.toString = function() {
+      return _base64;
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // base64DecodeInputStream
+  //---------------------------------------------------------------------
+
+  var base64DecodeInputStream = function(str) {
+
+    var _str = str;
+    var _pos = 0;
+    var _buffer = 0;
+    var _buflen = 0;
+
+    var _this = {};
+
+    _this.read = function() {
+
+      while (_buflen < 8) {
+
+        if (_pos >= _str.length) {
+          if (_buflen == 0) {
+            return -1;
+          }
+          throw 'unexpected end of file./' + _buflen;
+        }
+
+        var c = _str.charAt(_pos);
+        _pos += 1;
+
+        if (c == '=') {
+          _buflen = 0;
+          return -1;
+        } else if (c.match(/^\s$/) ) {
+          // ignore if whitespace.
+          continue;
+        }
+
+        _buffer = (_buffer << 6) | decode(c.charCodeAt(0) );
+        _buflen += 6;
+      }
+
+      var n = (_buffer >>> (_buflen - 8) ) & 0xff;
+      _buflen -= 8;
+      return n;
+    };
+
+    var decode = function(c) {
+      if (0x41 <= c && c <= 0x5a) {
+        return c - 0x41;
+      } else if (0x61 <= c && c <= 0x7a) {
+        return c - 0x61 + 26;
+      } else if (0x30 <= c && c <= 0x39) {
+        return c - 0x30 + 52;
+      } else if (c == 0x2b) {
+        return 62;
+      } else if (c == 0x2f) {
+        return 63;
+      } else {
+        throw 'c:' + c;
+      }
+    };
+
+    return _this;
+  };
+
+  //---------------------------------------------------------------------
+  // gifImage (B/W)
+  //---------------------------------------------------------------------
+
+  var gifImage = function(width, height) {
+
+    var _width = width;
+    var _height = height;
+    var _data = new Array(width * height);
+
+    var _this = {};
+
+    _this.setPixel = function(x, y, pixel) {
+      _data[y * _width + x] = pixel;
+    };
+
+    _this.write = function(out) {
+
+      //---------------------------------
+      // GIF Signature
+
+      out.writeString('GIF87a');
+
+      //---------------------------------
+      // Screen Descriptor
+
+      out.writeShort(_width);
+      out.writeShort(_height);
+
+      out.writeByte(0x80); // 2bit
+      out.writeByte(0);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Global Color Map
+
+      // black
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+      out.writeByte(0x00);
+
+      // white
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+      out.writeByte(0xff);
+
+      //---------------------------------
+      // Image Descriptor
+
+      out.writeString(',');
+      out.writeShort(0);
+      out.writeShort(0);
+      out.writeShort(_width);
+      out.writeShort(_height);
+      out.writeByte(0);
+
+      //---------------------------------
+      // Local Color Map
+
+      //---------------------------------
+      // Raster Data
+
+      var lzwMinCodeSize = 2;
+      var raster = getLZWRaster(lzwMinCodeSize);
+
+      out.writeByte(lzwMinCodeSize);
+
+      var offset = 0;
+
+      while (raster.length - offset > 255) {
+        out.writeByte(255);
+        out.writeBytes(raster, offset, 255);
+        offset += 255;
+      }
+
+      out.writeByte(raster.length - offset);
+      out.writeBytes(raster, offset, raster.length - offset);
+      out.writeByte(0x00);
+
+      //---------------------------------
+      // GIF Terminator
+      out.writeString(';');
+    };
+
+    var bitOutputStream = function(out) {
+
+      var _out = out;
+      var _bitLength = 0;
+      var _bitBuffer = 0;
+
+      var _this = {};
+
+      _this.write = function(data, length) {
+
+        if ( (data >>> length) != 0) {
+          throw 'length over';
+        }
+
+        while (_bitLength + length >= 8) {
+          _out.writeByte(0xff & ( (data << _bitLength) | _bitBuffer) );
+          length -= (8 - _bitLength);
+          data >>>= (8 - _bitLength);
+          _bitBuffer = 0;
+          _bitLength = 0;
+        }
+
+        _bitBuffer = (data << _bitLength) | _bitBuffer;
+        _bitLength = _bitLength + length;
+      };
+
+      _this.flush = function() {
+        if (_bitLength > 0) {
+          _out.writeByte(_bitBuffer);
+        }
+      };
+
+      return _this;
+    };
+
+    var getLZWRaster = function(lzwMinCodeSize) {
+
+      var clearCode = 1 << lzwMinCodeSize;
+      var endCode = (1 << lzwMinCodeSize) + 1;
+      var bitLength = lzwMinCodeSize + 1;
+
+      // Setup LZWTable
+      var table = lzwTable();
+
+      for (var i = 0; i < clearCode; i += 1) {
+        table.add(String.fromCharCode(i) );
+      }
+      table.add(String.fromCharCode(clearCode) );
+      table.add(String.fromCharCode(endCode) );
+
+      var byteOut = byteArrayOutputStream();
+      var bitOut = bitOutputStream(byteOut);
+
+      // clear code
+      bitOut.write(clearCode, bitLength);
+
+      var dataIndex = 0;
+
+      var s = String.fromCharCode(_data[dataIndex]);
+      dataIndex += 1;
+
+      while (dataIndex < _data.length) {
+
+        var c = String.fromCharCode(_data[dataIndex]);
+        dataIndex += 1;
+
+        if (table.contains(s + c) ) {
+
+          s = s + c;
+
+        } else {
+
+          bitOut.write(table.indexOf(s), bitLength);
+
+          if (table.size() < 0xfff) {
+
+            if (table.size() == (1 << bitLength) ) {
+              bitLength += 1;
+            }
+
+            table.add(s + c);
+          }
+
+          s = c;
+        }
+      }
+
+      bitOut.write(table.indexOf(s), bitLength);
+
+      // end code
+      bitOut.write(endCode, bitLength);
+
+      bitOut.flush();
+
+      return byteOut.toByteArray();
+    };
+
+    var lzwTable = function() {
+
+      var _map = {};
+      var _size = 0;
+
+      var _this = {};
+
+      _this.add = function(key) {
+        if (_this.contains(key) ) {
+          throw 'dup key:' + key;
+        }
+        _map[key] = _size;
+        _size += 1;
+      };
+
+      _this.size = function() {
+        return _size;
+      };
+
+      _this.indexOf = function(key) {
+        return _map[key];
+      };
+
+      _this.contains = function(key) {
+        return typeof _map[key] != 'undefined';
+      };
+
+      return _this;
+    };
+
+    return _this;
+  };
+
+  var createDataURL = function(width, height, getPixel) {
+    var gif = gifImage(width, height);
+    for (var y = 0; y < height; y += 1) {
+      for (var x = 0; x < width; x += 1) {
+        gif.setPixel(x, y, getPixel(x, y) );
+      }
+    }
+
+    var b = byteArrayOutputStream();
+    gif.write(b);
+
+    var base64 = base64EncodeOutputStream();
+    var bytes = b.toByteArray();
+    for (var i = 0; i < bytes.length; i += 1) {
+      base64.writeByte(bytes[i]);
+    }
+    base64.flush();
+
+    return 'data:image/gif;base64,' + base64;
+  };
+
+  //---------------------------------------------------------------------
+  // returns qrcode function.
+
+  return qrcode;
+}();
+
+// multibyte support
+!function() {
+
+  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+    function toUTF8Array(str) {
+      var utf8 = [];
+      for (var i=0; i < str.length; i++) {
+        var charcode = str.charCodeAt(i);
+        if (charcode < 0x80) utf8.push(charcode);
+        else if (charcode < 0x800) {
+          utf8.push(0xc0 | (charcode >> 6),
+              0x80 | (charcode & 0x3f));
+        }
+        else if (charcode < 0xd800 || charcode >= 0xe000) {
+          utf8.push(0xe0 | (charcode >> 12),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+        // surrogate pair
+        else {
+          i++;
+          // UTF-16 encodes 0x10000-0x10FFFF by
+          // subtracting 0x10000 and splitting the
+          // 20 bits of 0x0-0xFFFFF into two halves
+          charcode = 0x10000 + (((charcode & 0x3ff)<<10)
+            | (str.charCodeAt(i) & 0x3ff));
+          utf8.push(0xf0 | (charcode >>18),
+              0x80 | ((charcode>>12) & 0x3f),
+              0x80 | ((charcode>>6) & 0x3f),
+              0x80 | (charcode & 0x3f));
+        }
+      }
+      return utf8;
+    }
+    return toUTF8Array(s);
+  };
+
+}();
+
+(function (factory) {
+  if (typeof define === 'function' && define.amd) {
+      define([], factory);
+  } else if (typeof exports === 'object') {
+      module.exports = factory();
+  }
+}(function () {
+    return qrcode;
+}));
+
+</script>
+<script>
+"use strict";
+
+const mediaSignalId = /^mc_um2_(\d{1,16})$/;
+const controlSignalId = /^mc_um2_(hello|ready|busy|recover|stop)_(\d{1,16})$/;
+const controlSdp = "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\n";
+const receiverPrefix = "um-view-";
+const senderId = code => "utsushimado-v2-" + code;
+const iceServers = [
+  { urls: "stun:stun.l.google.com:19302" },
+  {
+    urls: ["turn:eu-0.turn.peerjs.com:3478", "turn:us-0.turn.peerjs.com:3478"],
+    username: "peerjs",
+    credential: "peerjsp"
+  }
+];
+
+function randomToken() {
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, value => value.toString(16).padStart(2, "0")).join("");
+}
+
+class Signaling {
+  constructor(id, onReady, onMessage) {
+    this.id = id;
+    this.token = randomToken();
+    this.onReady = onReady;
+    this.onMessage = onMessage;
+    this.backoff = 500;
+  }
+
+  open() {
+    if (this.closed || this.socket || this.retry) return;
+    const url = new URL("wss://0.peerjs.com/peerjs");
+    url.search = new URLSearchParams({ key: "peerjs", id: this.id, token: this.token, version: "1.5.5" });
+    let socket;
+    try {
+      socket = this.socket = new WebSocket(url);
+    } catch {
+      this.scheduleRetry();
+      return;
+    }
+
+    const ready = () => {
+      if (this.closed || this.socket !== socket || this.ready || socket.readyState !== WebSocket.OPEN) return;
+      clearTimeout(this.registerTimer);
+      clearTimeout(this.connectTimer);
+      this.ready = this.registered = true;
+      this.backoff = 500;
+      this.ping = setInterval(() => this.write({ type: "HEARTBEAT" }), 5000);
+      this.write({ type: "HEARTBEAT" });
+      this.onReady();
+    };
+
+    this.connectTimer = setTimeout(() => socket.close(), 7000);
+    socket.onopen = () => {
+      // PeerServer may reuse an existing registration with the same token after a brief network loss.
+      if (this.registered) this.registerTimer = setTimeout(ready, 400);
+    };
+    socket.onmessage = event => {
+      if (this.closed || this.socket !== socket || typeof event.data !== "string" || event.data.length > 110000) return;
+      let message;
+      try { message = JSON.parse(event.data); } catch { return; }
+      if (!message || typeof message !== "object") return;
+      if (message.type === "OPEN") ready();
+      else if (["ID-TAKEN", "ERROR", "INVALID-KEY"].includes(message.type)) socket.close();
+      else this.receive(message);
+      // A PeerServer LEAVE only describes its WebSocket. The media path can still be working.
+    };
+    socket.onclose = () => {
+      if (this.socket !== socket) return;
+      this.clearSocket();
+      this.scheduleRetry();
+    };
+  }
+
+  scheduleRetry() {
+    if (this.closed) return;
+    this.retry = setTimeout(() => {
+      this.retry = null;
+      this.open();
+    }, this.backoff);
+    this.backoff = Math.min(this.backoff * 2, 8000);
+  }
+
+  wake(reopen = false) {
+    if (this.closed || (this.socket && !reopen)) return;
+    if (reopen && this.socket) {
+      const previous = this.socket;
+      this.clearSocket();
+      previous.close();
+    }
+    clearTimeout(this.retry);
+    this.retry = null;
+    this.open();
+  }
+
+  write(message) {
+    if (!this.ready || this.socket?.readyState !== WebSocket.OPEN) return false;
+    try {
+      this.socket.send(JSON.stringify(message));
+      return true;
+    } catch {
+      this.socket.close();
+      return false;
+    }
+  }
+
+  send(destination, kind, fields = {}) {
+    if (!destination) return false;
+    const generation = fields.generation ?? 0;
+    const media = ["offer", "answer", "candidate"].includes(kind);
+    const type = media ? kind.toUpperCase() : "OFFER";
+    const connectionId = "mc_um2_" + (media ? generation : kind + "_" + generation);
+    // Match PeerServer's standard signaling envelopes. Control messages are never passed to WebRTC.
+    const body = kind === "candidate" ? { candidate: fields.candidate } :
+      { sdp: { type: type.toLowerCase(), sdp: media ? fields.sdp : controlSdp } };
+    return this.write({ type, dst: destination, payload: { type: "media", connectionId, ...body } });
+  }
+
+  receive(message) {
+    const payload = message.payload;
+    if (!payload || typeof payload.connectionId !== "string" || payload.type !== "media") return;
+    const media = mediaSignalId.exec(payload.connectionId);
+    if (media && ["OFFER", "ANSWER", "CANDIDATE"].includes(message.type)) {
+      this.onMessage(message.src, {
+        kind: message.type.toLowerCase(), generation: Number(media[1]),
+        sdp: payload.sdp?.sdp, candidate: payload.candidate
+      });
+      return;
+    }
+    const control = controlSignalId.exec(payload.connectionId);
+    if (control && message.type === "OFFER") {
+      this.onMessage(message.src, { kind: control[1], generation: Number(control[2]) });
+    }
+  }
+
+  clearSocket() {
+    this.socket = null;
+    this.ready = false;
+    clearInterval(this.ping);
+    clearTimeout(this.connectTimer);
+    clearTimeout(this.registerTimer);
+  }
+
+  close() {
+    this.closed = true;
+    clearTimeout(this.retry);
+    const socket = this.socket;
+    this.clearSocket();
+    socket?.close();
+  }
+}
+
+const qualityProfiles = [
+  { width: 640, height: 360, fps: 15, bitrate: 520000 },
+  { width: 854, height: 480, fps: 24, bitrate: 1000000 },
+  { width: 1280, height: 720, fps: 30, bitrate: 1900000 },
+  { width: 1920, height: 1080, fps: 30, bitrate: 3600000 }
+];
+const qualityLimits = { auto: 2, stable: 1, detail: 3 };
+
+function clearQualityStreak(current) {
+  current.weakSamples = 0;
+  current.goodSamples = 0;
+}
+
+function updateQualityLabel(current) {
+  const profile = qualityProfiles[current?.qualityLevel ?? qualityLimits[ui.quality.value]];
+  ui["quality-note"].textContent = "最大 " + profile.height + "p・" + profile.fps + " fps を目安に調整";
+}
+
+function setQualityLevel(current, level) {
+  current.qualityLevel = level;
+  clearQualityStreak(current);
+  updateQualityLabel(current);
+  return queueQuality(current);
+}
+
+function queueQuality(current) {
+  const version = current.qualityVersion = (current.qualityVersion ?? 0) + 1;
+  const valid = () => session === current && current.qualityVersion === version;
+  current.qualityWork = (current.qualityWork ?? Promise.resolve()).catch(() => {}).then(async () => {
+    const track = current.stream?.getVideoTracks()[0];
+    if (!valid() || !track || track.readyState === "ended") return;
+    const profile = qualityProfiles[current.qualityLevel];
+    const before = track.getSettings?.() ?? {};
+    const portrait = before.height > before.width;
+    if ("contentHint" in track) track.contentHint = ui.quality.value === "detail" ? "detail" : "motion";
+    const frameRate = { max: profile.fps };
+    const limit = { frameRate };
+    if (before.width && before.height) {
+      limit.width = { max: portrait ? profile.height : profile.width };
+      limit.height = { max: portrait ? profile.width : profile.height };
+    }
+
+    if (track.applyConstraints && current.captureProfile !== profile) {
+      try {
+        await track.applyConstraints(limit);
+      } catch {
+        try { await track.applyConstraints({ frameRate }); } catch { /* Encoder limits remain available. */ }
+      }
+      current.captureProfile = profile;
+    }
+    const sender = current.link?.videoSender;
+    if (!valid() || !sender?.getParameters || !sender.setParameters) return;
+    const after = track.getSettings?.() ?? before;
+    const longSide = Math.max(after.width || 0, after.height || 0);
+    const shortSide = Math.min(after.width || 0, after.height || 0);
+    const scale = Math.max(1, longSide / profile.width, shortSide / profile.height);
+
+    try {
+      await setEncoderLimits(sender, profile, scale, true);
+    } catch {
+      if (!valid()) return;
+      try { await setEncoderLimits(sender, profile, scale, false); } catch { /* Capture constraints are still applied. */ }
+    }
+  });
+  return current.qualityWork;
+}
+
+async function setEncoderLimits(sender, profile, scale, full) {
+  const parameters = sender.getParameters();
+  if (!parameters.encodings?.length) return;
+  for (const encoding of parameters.encodings) {
+    encoding.maxBitrate = profile.bitrate;
+    if (full) {
+      encoding.maxFramerate = profile.fps;
+      encoding.scaleResolutionDownBy = scale;
+    }
+  }
+  if (full) parameters.degradationPreference = ui.quality.value === "detail" ? "balanced" : "maintain-framerate";
+  await sender.setParameters(parameters);
+}
+
+function readLinkStats(stats) {
+  let pair;
+  let fallback;
+  let outbound;
+  stats.forEach(entry => {
+    if (entry.type === "transport" && entry.selectedCandidatePairId) pair ??= stats.get(entry.selectedCandidatePairId);
+    if (entry.type === "candidate-pair" && entry.nominated && entry.state === "succeeded") {
+      if (!fallback || (entry.bytesSent ?? 0) + (entry.bytesReceived ?? 0) > (fallback.bytesSent ?? 0) + (fallback.bytesReceived ?? 0)) fallback = entry;
+    }
+    if (entry.type === "outbound-rtp" && (entry.kind ?? entry.mediaType) === "video" &&
+        Number.isFinite(entry.bytesSent) && (!outbound || entry.bytesSent > outbound.bytesSent)) outbound = entry;
+  });
+  pair ??= fallback;
+  const candidates = [stats.get(pair?.localCandidateId), stats.get(pair?.remoteCandidateId)];
+  const types = candidates.map(candidate => candidate?.candidateType);
+  const path = types.includes("relay") ? "中継接続" : types.every(Boolean) ? "直接接続" : "";
+  const loss = stats.get(outbound?.remoteId)?.fractionLost;
+  return { path, outbound, loss, bandwidth: pair?.availableOutgoingBitrate, rtt: pair?.currentRoundTripTime };
+}
+
+function adaptQuality(current, link, metrics) {
+  const sample = metrics.outbound;
+  const previous = link.lastSample;
+  link.lastSample = sample;
+  const active = sample && previous?.id === sample.id &&
+    (sample.bytesSent - previous.bytesSent > 16000 || sample.framesEncoded - previous.framesEncoded >= 4);
+  if (!active) {
+    clearQualityStreak(current);
+    return;
+  }
+  const level = current.qualityLevel;
+  const profile = qualityProfiles[level];
+  const weak = ["bandwidth", "cpu"].includes(sample.qualityLimitationReason) ||
+    metrics.loss > 0.08 || (metrics.bandwidth > 0 && metrics.bandwidth < profile.bitrate * 0.65) ||
+    (metrics.rtt > 0.35 && (!metrics.bandwidth || metrics.bandwidth < profile.bitrate));
+  if (weak) {
+    current.goodSamples = 0;
+    if (++current.weakSamples >= 2 && level > 0) setQualityLevel(current, level - 1);
+    return;
+  }
+  current.weakSamples = 0;
+  const headroom = !metrics.bandwidth || metrics.bandwidth > profile.bitrate * 1.2;
+  if (!headroom || metrics.rtt > 0.2 || metrics.loss > 0.03) {
+    current.goodSamples = 0;
+    return;
+  }
+  if (++current.goodSamples >= 9 && level < qualityLimits[ui.quality.value]) {
+    setQualityLevel(current, level + 1);
+  }
+}
+
+function pollStats(current, link) {
+  if (link.statsTimer || !link.rtc.getStats) return;
+  const poll = async () => {
+    if (!isActiveLink(current, link)) return;
+    try {
+      if (link.connected && !current.recovery) {
+        const report = await link.rtc.getStats();
+        if (!isActiveLink(current, link)) return;
+        if (link.connected && !current.recovery) {
+          const metrics = readLinkStats(report);
+          ui["link-path"].textContent = metrics.path;
+          if (role === "send") adaptQuality(current, link, metrics);
+        }
+      }
+    } catch { /* Some browsers do not expose all connection statistics. */ }
+    if (isActiveLink(current, link)) link.statsTimer = setTimeout(poll, 2000);
+  };
+  link.statsTimer = setTimeout(poll, 1000);
+}
+
+const ui = Object.fromEntries([...document.querySelectorAll("[id]")].map(node => [node.id, node]));
+const inviteAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+const recoveryWindow = 60000;
+const recoveryGrace = 7500;
+const offerInterval = 12500;
+const canCapture = () => Boolean(navigator.mediaDevices?.getDisplayMedia);
+const visible = (element, show) => { element.hidden = !show; };
+let role = "send";
+let phase = "idle";
+let session = null;
+
+function status(message, error = false) {
+  ui.status.textContent = message;
+  ui.status.classList.toggle("error", error);
+}
+
+function render() {
+  const sending = role === "send";
+  const auto = ui.mode.value === "auto";
+  const idle = phase === "idle";
+  const approved = phase === "approved";
+  const manualRetry = phase === "manual-retry";
+  ui["send-role"].setAttribute("aria-pressed", String(sending));
+  ui["view-role"].setAttribute("aria-pressed", String(!sending));
+  ui["send-role"].disabled = ui["view-role"].disabled = ui.mode.disabled = !idle;
+  ui.start.textContent = approved ? "許可して画面を共有" :
+    manualRetry ? "新しい招待コードを作る" :
+    auto ? "招待コードを作る" : "画面を選んで招待コードを作る";
+  ui.start.disabled = !canCapture() || !window.RTCPeerConnection || (auto && !window.WebSocket);
+  visible(ui.start, sending && (idle || approved || manualRetry));
+  visible(ui["quality-option"], sending);
+  visible(ui["quality-note"], sending && Boolean(session?.stream));
+  visible(ui["audio-option"], sending && (approved || (idle && !auto)));
+  visible(ui["local-preview"], sending && Boolean(session?.stream));
+  ui["local-preview"].textContent = session?.preview ? "送信プレビューを閉じる" : "送信プレビューを表示";
+  visible(ui["join-form"], !sending && auto && idle);
+  visible(ui.invite, sending && auto && ["registering", "invite"].includes(phase));
+  ui["copy-link"].disabled = phase !== "invite";
+  visible(ui["manual-in"], !auto && ((!sending && (idle || manualRetry)) || phase === "offer"));
+  visible(ui["manual-out"], !auto && (phase === "offer" || (!sending && phase === "connecting")));
+  visible(ui.stop, !idle);
+  ui.stop.textContent = sending && session?.stream ? "画面共有を終了" : "接続を終了";
+  ui["incoming-label"].textContent = sending ? "見る側から届いた応答コード" : "送る側の招待コード";
+  ui["outgoing-label"].textContent = sending ? "見る側へ送る招待コード" : "送る側に返す応答コード";
+
+  const recovering = phase === "recovering";
+  const active = phase === "live";
+  const preparing = Boolean(session?.stream) && sending;
+  ui["preview-state"].textContent = recovering ? "再接続中" : active ?
+    (sending ? "送信中" : "受信中") : preparing ? "共有の準備中" : "待機中";
+  ui.signal.classList.toggle("live", active);
+  ui.signal.classList.toggle("recovering", recovering);
+  ui["placeholder-text"].textContent = preparing ? "送信プレビューは非表示です" : "接続すると映像がここに表示されます";
+  visible(ui["video-message"], !sending && recovering);
+  if (!active) ui["link-path"].textContent = "";
+  updateQualityLabel(session);
+}
+
+function setPhase(next, message, error = false) {
+  phase = next;
+  status(message, error);
+  render();
+}
+
+function showVideo(stream, local) {
+  if (ui.video.srcObject !== stream) ui.video.srcObject = stream;
+  ui.video.muted = local || !session?.soundEnabled;
+  ui.sound.textContent = ui.video.muted ? "音を出す" : "消音";
+  document.querySelector(".workspace").classList.add("has-video");
+  visible(ui.video, true);
+  visible(ui.placeholder, false);
+  visible(ui.fullscreen, true);
+  visible(ui.sound, !local && stream.getAudioTracks().length > 0);
+  playVideo(stream);
+}
+
+function playVideo(stream = ui.video.srcObject) {
+  if (!stream) return;
+  ui.video.play().catch(error => {
+    if (ui.video.srcObject !== stream) return;
+    if (!ui.video.muted && error.name === "NotAllowedError") {
+      session.soundEnabled = false;
+      ui.video.muted = true;
+      ui.sound.textContent = "音を出す";
+      playVideo(stream);
+      return;
+    }
+    visible(ui.play, true);
+  });
+}
+
+function clearVideo() {
+  ui.video.pause();
+  ui.video.srcObject = null;
+  ui.size.textContent = "";
+  document.querySelector(".workspace").classList.remove("has-video");
+  [ui.video, ui.fullscreen, ui.sound, ui.play].forEach(element => visible(element, false));
+  visible(ui.placeholder, true);
+}
+
+function newSession(mode, fields = {}) {
+  return session = {
+    mode, generation: 0, qualityLevel: qualityLimits[ui.quality.value], ...fields
+  };
+}
+
+function notifyStop(current) {
+  current.signal?.send(current.remoteId, "stop");
+  const channel = current.link?.control;
+  if (channel?.readyState === "open") {
+    try {
+      channel.send("utsushimado-stop");
+      return true;
+    } catch { /* The link may already have closed. */ }
+  }
+  return false;
+}
+
+function end(message = "接続を終了しました。", error = false, notify = true) {
+  const previous = session;
+  session = null;
+  if (previous) {
+    const stoppingThroughChannel = notify && notifyStop(previous);
+    clearTimeout(previous.timer);
+    clearTimeout(previous.recoveryTimer);
+    clearInterval(previous.helloTimer);
+    previous.stream?.getTracks().forEach(track => track.stop());
+    if (stoppingThroughChannel) setTimeout(() => closeLink(previous), 150);
+    else closeLink(previous);
+    previous.signal?.close();
+  }
+  ui.incoming.value = "";
+  ui.outgoing.value = "";
+  ui.qr.replaceChildren();
+  clearVideo();
+  setPhase("idle", message, error);
+}
+
+function timeout(current, ms, action) {
+  clearTimeout(current.timer);
+  current.timer = setTimeout(() => {
+    if (session === current) action();
+  }, ms);
+}
+
+function explainIdle() {
+  if (!window.isSecureContext || !window.RTCPeerConnection) {
+    status("HTTPSで公開されたページを、対応ブラウザで開いてください。", true);
+  } else if (role === "send" && !canCapture()) {
+    status("このブラウザは画面の送信に対応していません。PCのChrome・Edgeか、Safari 27以降を使ってください。", true);
+  } else if (ui.mode.value === "auto" && !window.WebSocket) {
+    status("このブラウザではQR接続を利用できません。手動を試してください。", true);
+  } else if (role === "send") {
+    status(ui.mode.value === "auto" ? "招待を作り、見る端末でQRコードを読みます。" : "画面を選ぶと、相手に送る招待コードができます。");
+  } else {
+    status(ui.mode.value === "auto" ? "QRから開くか、送る端末に表示されたコードを入力します。" : "送る端末から届いた招待コードを貼り付けます。");
+  }
+  render();
+}
+
+function joinCode(value) {
+  const clean = value.trim().toUpperCase().replace(/[\s-]/g, "");
+  return clean.length === 16 && [...clean].every(char => inviteAlphabet.includes(char)) ? clean : "";
+}
+
+function makeInvite() {
+  const random = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(random, value => inviteAlphabet[value & 31]).join("");
+}
+
+function inviteLink(code) {
+  const url = new URL(location.href);
+  url.search = "";
+  url.hash = "view=" + code;
+  return url.href;
+}
+
+function showInvite(code) {
+  ui["invite-code"].textContent = code.match(/.{4}/g).join("-");
+  try {
+    const qr = window.qrcode(0, "M");
+    qr.addData(inviteLink(code));
+    qr.make();
+    ui.qr.innerHTML = qr.createSvgTag({ cellSize: 4, margin: 16, scalable: true });
+    ui.qr.querySelector("svg").setAttribute("aria-hidden", "true");
+  } catch {
+    ui.qr.replaceChildren();
+  }
+  const hasQr = Boolean(ui.qr.firstChild);
+  visible(ui.qr, hasQr);
+  return hasQr;
+}
+
+function showInvitation(current) {
+  setPhase("invite", current.hasQr ?
+    "招待の準備ができました。見る端末でQRを読むか、下のコードを入力してください。" :
+    "招待の準備ができました。見る端末で下のコードを入力するか、招待リンクを開いてください。");
+}
+
+function openInvite() {
+  const code = makeInvite();
+  const current = newSession("auto", { code, hasQr: showInvite(code) });
+  setPhase("registering", "接続サービスに招待を登録しています。準備ができてから、見る端末で読み取ってください。");
+  timeout(current, 23000, () => end("招待を接続サービスに登録できませんでした。再試行するか、両方で手動を選んでください。", true));
+  startSignaling(current, senderId(code), () => {
+    if (phase === "registering") {
+      clearTimeout(current.timer);
+      showInvitation(current);
+    }
+    if (current.remoteId) current.signal.send(current.remoteId, "ready");
+    refreshSignaling(current);
+  });
+}
+
+function connectViewer(code) {
+  const current = newSession("auto", { remoteId: senderId(code) });
+  setPhase("starting", "送る端末に接続しています…");
+  timeout(current, 32000, () => end("招待を確認できませんでした。送る側で招待の準備ができているか確認し、両端末でページを更新してください。", true));
+  startSignaling(current, receiverPrefix + randomToken(), () => {
+    if (!current.paired) current.signal.send(current.remoteId, "hello");
+    refreshSignaling(current);
+  });
+  current.helloTimer = setInterval(() => current.signal.send(current.remoteId, "hello"), 3000);
+}
+
+function startSignaling(current, id, onReady) {
+  current.signal = new Signaling(id, onReady, (source, message) => {
+    // Apply SDP and candidates in the order they arrive on the socket.
+    current.inbox = (current.inbox ?? Promise.resolve()).then(() => {
+      if (session === current) return receiveSignal(current, source, message);
+    }).catch(() => {
+      if (session === current && (current.stream || current.paired)) beginRecovery(current, 1500);
+    });
+  });
+  current.signal.open();
+}
+
+function refreshSignaling(current) {
+  if (phase === "connecting" || phase === "recovering") {
+    sendDescription(current, current.link);
+    if (current.recovery && role === "view" && Date.now() >= current.recovery.next) requestNewLink(current);
+  }
+}
+
+function receiveHello(current, source) {
+  if (role !== "send" || typeof source !== "string" || !/^um-view-[0-9a-f]{32}$/.test(source)) return;
+  if (current.remoteId === source) {
+    current.signal.send(source, "ready");
+    return;
+  }
+  if (current.remoteId) {
+    current.signal.send(source, "busy");
+    return;
+  }
+  if (phase !== "invite" || !current.signal.ready) return;
+  current.remoteId = source;
+  current.signal.send(source, "ready");
+  setPhase("approved", "見る端末が接続しました。自分の端末であることを確かめて、共有を開始してください。");
+}
+
+async function receiveSignal(current, source, message) {
+  if (message.kind === "hello") return receiveHello(current, source);
+  if (!source || source !== current.remoteId) return;
+  if (message.kind === "stop") {
+    if (role === "send" && phase === "approved") {
+      current.remoteId = null;
+      showInvitation(current);
+    } else {
+      end("相手の端末との接続が終了しました。", false, false);
+    }
+    return;
+  }
+
+  if (role === "view" && !current.paired) {
+    if (message.kind === "busy") {
+      end("この招待は別の端末が使用中です。送る側で新しい招待を作ってください。", true, false);
+    }
+    if (message.kind === "ready") {
+      current.paired = true;
+      clearInterval(current.helloTimer);
+      setPhase("connecting", "送る端末で画面共有を開始してください。");
+      timeout(current, 120000, () => end("送る側の共有が始まりませんでした。もう一度接続してください。", true));
+    }
+    return;
+  }
+
+  if (!Number.isSafeInteger(message.generation) || message.generation < 0) return;
+  if (message.kind === "recover" && role === "send" && current.stream) {
+    if (message.generation < current.generation) {
+      sendDescription(current, current.link);
+    } else {
+      if (current.link?.connected) sendDescription(current, current.link);
+      beginRecovery(current, current.link?.connected ? 2400 : 0);
+    }
+    return;
+  }
+
+  if (message.kind === "offer" && role === "view" && message.generation > 0 && validSdp(message.sdp)) {
+    if (message.generation < current.generation) return;
+    if (message.generation === current.generation) {
+      sendDescription(current, current.link);
+      return;
+    }
+    await acceptOffer(current, message);
+    return;
+  }
+
+  const link = current.link;
+  if (!link || message.generation !== link.generation) return;
+  if (message.kind === "answer" && role === "send" && link.rtc.signalingState === "have-local-offer" && validSdp(message.sdp)) {
+    await link.rtc.setRemoteDescription({ type: "answer", sdp: message.sdp });
+    await flushCandidates(current, link);
+  }
+  if (message.kind === "candidate") await acceptCandidate(current, link, message.candidate);
+}
+
+function validSdp(value) {
+  return typeof value === "string" && value.length <= 100000 && value.startsWith("v=0");
+}
+
+function newLink(current, generation) {
+  closeLink(current);
+  const rtc = new RTCPeerConnection({
+    iceServers: current.mode === "auto" ? iceServers : [],
+    bundlePolicy: "max-bundle"
+  });
+  const link = current.link = { rtc, generation, candidates: [], pendingCandidates: [], seenCandidates: new Set() };
+  current.generation = generation;
+  rtc.addEventListener("datachannel", event => attachControl(current, link, event.channel));
+  rtc.addEventListener("track", event => {
+    if (!isActiveLink(current, link) || role !== "view") return;
+    link.remoteStream ??= new MediaStream();
+    link.remoteStream.addTrack(event.track);
+    event.track.addEventListener("unmute", () => checkLink(current, link));
+    checkLink(current, link);
+  });
+  rtc.addEventListener("connectionstatechange", () => checkLink(current, link));
+  rtc.addEventListener("iceconnectionstatechange", () => checkLink(current, link));
+  if (current.mode === "auto") rtc.addEventListener("icecandidate", event => {
+    if (!isActiveLink(current, link) || !event.candidate || link.candidates.length >= 64) return;
+    const candidate = event.candidate.toJSON();
+    link.candidates.push(candidate);
+    if (link.localKind) current.signal.send(current.remoteId, "candidate", { generation, candidate });
+  });
+  return link;
+}
+
+function isActiveLink(current, link) {
+  return session === current && current.link === link;
+}
+
+function closeLink(current) {
+  const link = current.link;
+  current.link = null;
+  if (!link) return;
+  clearTimeout(link.statsTimer);
+  link.control?.close();
+  link.rtc.close();
+}
+
+function attachControl(current, link, channel) {
+  if (!isActiveLink(current, link) || channel.label !== "utsushimado" || link.control) {
+    channel.close();
+    return;
+  }
+  link.control = channel;
+  channel.addEventListener("message", event => {
+    if (event.data === "utsushimado-stop" && isActiveLink(current, link)) {
+      end("相手の端末との接続が終了しました。", false, false);
+    }
+  });
+}
+
+function sendDescription(current, link) {
+  if (!link?.localKind || !link.rtc.localDescription) return;
+  const generation = link.generation;
+  if (!current.signal.send(current.remoteId, link.localKind, { generation, sdp: link.rtc.localDescription.sdp })) return;
+  for (const candidate of link.candidates) {
+    current.signal.send(current.remoteId, "candidate", { generation, candidate });
+  }
+}
+
+async function acceptCandidate(current, link, candidate) {
+  if (!candidate || typeof candidate.candidate !== "string" || candidate.candidate.length > 2000) return;
+  const key = candidate.candidate + "|" + candidate.sdpMid + "|" + candidate.sdpMLineIndex;
+  if (link.seenCandidates.has(key) || link.seenCandidates.size >= 64) return;
+  link.seenCandidates.add(key);
+  if (!link.rtc.remoteDescription) link.pendingCandidates.push(candidate);
+  else await addCandidate(current, link, candidate);
+}
+
+async function addCandidate(current, link, candidate) {
+  if (!isActiveLink(current, link)) return;
+  try { await link.rtc.addIceCandidate(candidate); } catch { /* A duplicate or expired candidate can be ignored. */ }
+}
+
+async function flushCandidates(current, link) {
+  const pending = link.pendingCandidates.splice(0);
+  for (const candidate of pending) await addCandidate(current, link, candidate);
+}
+
+async function makeAutoOffer(current) {
+  if (session !== current || !current.stream || current.offering) return;
+  current.offering = true;
+  try {
+    const link = newLink(current, current.generation + 1);
+    addMedia(current, link);
+    await link.rtc.setLocalDescription(await link.rtc.createOffer());
+    if (!isActiveLink(current, link)) return;
+    link.localKind = "offer";
+    sendDescription(current, link);
+    if (!current.recovery && !link.connected) timeout(current, 17000, () => beginRecovery(current, 0));
+  } catch {
+    if (session === current) beginRecovery(current, 1500);
+  } finally {
+    current.offering = false;
+  }
+}
+
+async function acceptOffer(current, message) {
+  if (current.everLive) beginRecovery(current, offerInterval);
+  const link = newLink(current, message.generation);
+  if (!current.recovery) setPhase("connecting", "映像をつないでいます…");
+  await link.rtc.setRemoteDescription({ type: "offer", sdp: message.sdp });
+  if (!isActiveLink(current, link)) return;
+  await link.rtc.setLocalDescription(await link.rtc.createAnswer());
+  if (!isActiveLink(current, link)) return;
+  link.localKind = "answer";
+  sendDescription(current, link);
+  if (!current.recovery && phase !== "live") timeout(current, 17500, () => beginRecovery(current, 0));
+}
+
+function addMedia(current, link) {
+  for (const track of current.stream.getTracks()) {
+    const sender = link.rtc.addTrack(track, current.stream);
+    if (track.kind === "video") link.videoSender = sender;
+  }
+  attachControl(current, link, link.rtc.createDataChannel("utsushimado"));
+  queueQuality(current);
+}
+
+function linkState(rtc) {
+  if (["failed", "closed", "disconnected"].includes(rtc.connectionState)) return rtc.connectionState;
+  if (["failed", "closed", "disconnected"].includes(rtc.iceConnectionState)) return rtc.iceConnectionState;
+  return rtc.connectionState ?? rtc.iceConnectionState;
+}
+
+function checkLink(current, link) {
+  if (!isActiveLink(current, link)) return;
+  const state = linkState(link.rtc);
+  if (state === "connected" || state === "completed") {
+    const newlyConnected = !link.connected;
+    link.connected = link.everConnected = true;
+    if (role === "view" && !link.remoteStream?.getVideoTracks().length) return;
+    if (role === "view" && ui.video.srcObject !== link.remoteStream) showVideo(link.remoteStream, false);
+    if (role === "view") visible(ui.sound, link.remoteStream.getAudioTracks().length > 0);
+    if (phase !== "live") markLive(current, link);
+    else if (newlyConnected && role === "send") queueQuality(current);
+    return;
+  }
+  link.connected = false;
+  if (state === "failed" || state === "closed") beginRecovery(current, 900, true);
+  else if (["disconnected", "connecting", "checking"].includes(state) && link.everConnected) {
+    beginRecovery(current, recoveryGrace);
+  }
+}
+
+function markLive(current, link) {
+  const resumed = Boolean(current.recovery);
+  current.everLive = true;
+  current.recovery = null;
+  clearTimeout(current.timer);
+  clearTimeout(current.recoveryTimer);
+  clearQualityStreak(current);
+  if (role === "send") queueQuality(current);
+  else if (ui.video.paused) playVideo();
+  setPhase("live", resumed ? "接続が戻りました。画面共有を再開しています。" :
+    role === "send" ? "画面を共有しています。" : "画面を受信しています。");
+  pollStats(current, link);
+}
+
+function beginRecovery(current, delay, hardFailure = false) {
+  if (session !== current || phase === "manual-retry") return;
+  if (!current.recovery) {
+    clearTimeout(current.timer);
+    const now = Date.now();
+    current.recovery = {
+      deadline: now + (current.mode === "auto" ? recoveryWindow : 25000),
+      next: now + delay
+    };
+    if (role === "send" && current.qualityLevel > 1) setQualityLevel(current, 1);
+    setPhase("recovering", current.mode === "auto" ?
+      "接続が不安定です。画面共有を保ったまま再接続しています…" :
+      "接続が不安定です。通信が戻るのを待っています…");
+  }
+  if (hardFailure && current.link?.everConnected) {
+    current.recovery.next = Math.min(current.recovery.next, Date.now() + delay);
+  }
+  if (current.mode === "manual" && hardFailure) {
+    showManualRetry(current);
+    return;
+  }
+  scheduleRecovery(current);
+}
+
+function requestNewLink(current) {
+  current.signal.send(current.remoteId, "recover", { generation: current.generation });
+}
+
+function scheduleRecovery(current) {
+  clearTimeout(current.recoveryTimer);
+  const recovery = current.recovery;
+  if (!recovery) return;
+  const next = current.mode === "manual" ? recovery.deadline : Math.min(recovery.next, recovery.deadline);
+  current.recoveryTimer = setTimeout(() => recoveryTick(current), Math.max(0, next - Date.now()));
+}
+
+function recoveryTick(current) {
+  const recovery = current.recovery;
+  if (session !== current || !recovery) return;
+  const now = Date.now();
+  if (now >= recovery.deadline) {
+    if (current.mode === "manual") showManualRetry(current);
+    else end("接続が戻りませんでした。通信を確認し、もう一度招待を作ってください。", true);
+    return;
+  }
+  if (!current.signal.ready) {
+    current.signal.open();
+    recovery.next = now + 1400;
+  } else if (role === "send" && !current.offering) {
+    recovery.next = now + offerInterval;
+    makeAutoOffer(current);
+  } else if (role === "view") {
+    recovery.next = now + 5600;
+    requestNewLink(current);
+  } else {
+    recovery.next = now + 900;
+  }
+  scheduleRecovery(current);
+}
+
+function showManualRetry(current) {
+  current.recovery = null;
+  clearTimeout(current.recoveryTimer);
+  closeLink(current);
+  current.preview = false;
+  clearVideo();
+  ui.incoming.value = "";
+  ui.outgoing.value = "";
+  setPhase("manual-retry", role === "send" ?
+    "共有画面は選び直さずに再接続できます。新しい招待コードを作ってください。" :
+    "接続が切れました。送る側で作り直した招待コードを貼り付けてください。", true);
+}
+
+async function capture(current) {
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: ui.audio.checked });
+  } catch (error) {
+    if (session !== current) return false;
+    const message = error.name === "NotAllowedError" ?
+      "画面共有が許可されませんでした。もう一度試せます。" :
+      "画面を取得できませんでした。ブラウザとOSの画面共有設定を確認してください。";
+    if (current.mode === "auto") setPhase("approved", message, true);
+    else end(message, true);
+    return false;
+  }
+  if (session !== current) {
+    stream.getTracks().forEach(track => track.stop());
+    return false;
+  }
+  current.stream = stream;
+  const track = stream.getVideoTracks()[0];
+  track.addEventListener("ended", () => {
+    if (session === current) end("画面共有が終了しました。");
+  });
+  render();
+  queueQuality(current);
+  return true;
+}
+
+async function sendAutomatically(current) {
+  setPhase("picking", "共有する画面を選んでください。");
+  if (!await capture(current)) return;
+  setPhase("connecting", "映像をつないでいます…");
+  if (current.signal.ready) await makeAutoOffer(current);
+  else beginRecovery(current, 0);
+}
+
+function encodeDescription(description) {
+  const data = new TextEncoder().encode(JSON.stringify({ type: description.type, sdp: description.sdp }));
+  return "UM1." + btoa(Array.from(data, value => String.fromCharCode(value)).join(""));
+}
+
+function decodeDescription(value, expected) {
+  const clean = value.trim().replace(/\s/g, "");
+  if (!/^UM1\.[A-Za-z0-9+/=]+$/.test(clean) || clean.length > 100000) throw new Error("Invalid code");
+  const data = Uint8Array.from(atob(clean.slice(4)), char => char.charCodeAt(0));
+  const parsed = JSON.parse(new TextDecoder().decode(data));
+  if (parsed.type !== expected || !validSdp(parsed.sdp)) throw new Error("Wrong description type");
+  return { type: parsed.type, sdp: parsed.sdp };
+}
+
+function gather(rtc) {
+  return new Promise((resolve, reject) => {
+    const finish = () => {
+      if (rtc.iceGatheringState !== "complete") return;
+      clearTimeout(timer);
+      rtc.removeEventListener("icegatheringstatechange", finish);
+      resolve(rtc.localDescription);
+    };
+    const timer = setTimeout(() => {
+      rtc.removeEventListener("icegatheringstatechange", finish);
+      if (rtc.localDescription && /\na=candidate:/.test(rtc.localDescription.sdp)) resolve(rtc.localDescription);
+      else reject(new Error("ICE gathering timed out"));
+    }, 7000);
+    rtc.addEventListener("icegatheringstatechange", finish);
+    finish();
+  });
+}
+
+async function manualOffer(current) {
+  if (!current) {
+    current = newSession("manual");
+    setPhase("picking", "共有する画面を選んでください。");
+    if (!await capture(current)) return;
+  }
+  setPhase("starting", "手動の招待コードを作っています…");
+  try {
+    const link = newLink(current, current.generation + 1);
+    addMedia(current, link);
+    await link.rtc.setLocalDescription(await link.rtc.createOffer());
+    const description = await gather(link.rtc);
+    if (!isActiveLink(current, link)) return;
+    ui.outgoing.value = encodeDescription(description);
+    setPhase("offer", "招待コードを相手に送り、返ってきた応答コードを貼り付けます。");
+  } catch {
+    if (session === current) showManualRetry(current);
+  }
+}
+
+async function applyManualCode() {
+  const sending = role === "send";
+  let description;
+  try {
+    description = decodeDescription(ui.incoming.value, sending ? "answer" : "offer");
+  } catch {
+    status(sending ? "見る側が作った応答コードを全文貼り付けてください。" : "送る側が作った招待コードを全文貼り付けてください。", true);
+    return;
+  }
+  if (sending) {
+    const current = session;
+    const link = current.link;
+    setPhase("connecting", "映像をつないでいます…");
+    try {
+      await link.rtc.setRemoteDescription(description);
+      if (isActiveLink(current, link) && !link.connected) {
+        timeout(current, 25000, () => showManualRetry(current));
+      }
+    } catch {
+      if (isActiveLink(current, link)) setPhase("offer", "この招待に対する応答コードを貼り付け直してください。", true);
+    }
+    return;
+  }
+
+  const current = session ?? newSession("manual");
+  setPhase("starting", "応答コードを作っています…");
+  try {
+    const link = newLink(current, current.generation + 1);
+    await link.rtc.setRemoteDescription(description);
+    await link.rtc.setLocalDescription(await link.rtc.createAnswer());
+    const answer = await gather(link.rtc);
+    if (!isActiveLink(current, link)) return;
+    ui.outgoing.value = encodeDescription(answer);
+    setPhase("connecting", "応答コードを送る側に返し、読み込んでもらってください。");
+  } catch {
+    if (session === current) showManualRetry(current);
+  }
+}
+
+async function copy(value, button, fallback) {
+  const original = fallback ? "コードをコピー" : "招待リンクをコピー";
+  try {
+    await navigator.clipboard.writeText(value);
+    button.textContent = "コピーしました";
+    clearTimeout(button.copyTimer);
+    button.copyTimer = setTimeout(() => { button.textContent = original; }, 1200);
+  } catch {
+    if (fallback) {
+      fallback.focus();
+      fallback.select();
+      status("選択したコードを端末のコピー操作でコピーしてください。");
+    } else {
+      status("リンクをコピーできませんでした。QRコードか接続コードを使ってください。", true);
+    }
+  }
+}
+
+function chooseRole(next) {
+  role = next;
+  explainIdle();
+}
+
+function checkAfterWake(reopen = false) {
+  const current = session;
+  if (!current) return;
+  current.signal?.wake(reopen);
+  if (current.link) checkLink(current, current.link);
+  if (role === "view" && ui.video.paused) playVideo();
+}
+
+ui["send-role"].addEventListener("click", () => chooseRole("send"));
+ui["view-role"].addEventListener("click", () => chooseRole("view"));
+ui.mode.addEventListener("change", explainIdle);
+ui.quality.addEventListener("change", () => {
+  if (session) setQualityLevel(session, qualityLimits[ui.quality.value]);
+  else updateQualityLabel();
+});
+ui["local-preview"].addEventListener("click", () => {
+  if (!session?.stream) return;
+  session.preview = !session.preview;
+  if (session.preview) showVideo(session.stream, true);
+  else clearVideo();
+  render();
+});
+ui.start.addEventListener("click", () => {
+  if (ui.mode.value === "manual") manualOffer(session);
+  else if (phase === "approved") sendAutomatically(session);
+  else openInvite();
+});
+ui.stop.addEventListener("click", () => end());
+ui["join-form"].addEventListener("submit", event => {
+  event.preventDefault();
+  const code = joinCode(ui.join.value);
+  if (!code) status("送る端末に表示された16文字の接続コードを確認してください。", true);
+  else if (!window.WebSocket || !window.RTCPeerConnection) status("このブラウザではQR接続を利用できません。", true);
+  else connectViewer(code);
+});
+ui["copy-link"].addEventListener("click", () => copy(inviteLink(session.code), ui["copy-link"]));
+ui["copy-code"].addEventListener("click", () => copy(ui.outgoing.value, ui["copy-code"], ui.outgoing));
+ui["apply-code"].addEventListener("click", applyManualCode);
+ui.play.addEventListener("click", () => playVideo());
+ui.video.addEventListener("playing", () => visible(ui.play, false));
+ui.video.addEventListener("resize", () => {
+  if (ui.video.srcObject && ui.video.videoWidth) ui.size.textContent = ui.video.videoWidth + " × " + ui.video.videoHeight;
+});
+ui.sound.addEventListener("click", () => {
+  if (!session) return;
+  session.soundEnabled = ui.video.muted;
+  ui.video.muted = !session.soundEnabled;
+  ui.sound.textContent = ui.video.muted ? "音を出す" : "消音";
+  playVideo();
+});
+ui.fullscreen.addEventListener("click", async () => {
+  try {
+    if (ui.screen.requestFullscreen) await ui.screen.requestFullscreen();
+    else if (ui.video.webkitEnterFullscreen) ui.video.webkitEnterFullscreen();
+    else throw new Error("Fullscreen unavailable");
+  } catch {
+    if (ui.video.webkitEnterFullscreen && ui.video.readyState >= 2) {
+      try {
+        ui.video.webkitEnterFullscreen();
+        return;
+      } catch { /* The browser may reject native video fullscreen as well. */ }
+    }
+    status("このブラウザでは全画面表示を開始できませんでした。", true);
+  }
+});
+window.addEventListener("online", () => checkAfterWake(true));
+window.addEventListener("pagehide", () => { if (session) end(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkAfterWake(); });
+
+const codeFromLink = joinCode(new URLSearchParams(location.hash.slice(1)).get("view") || "");
+if (codeFromLink) {
+  history.replaceState(null, "", location.pathname + location.search);
+  ui.join.value = codeFromLink.match(/.{4}/g).join("-");
+  chooseRole("view");
+  if (window.WebSocket && window.RTCPeerConnection) connectViewer(codeFromLink);
+} else {
+  explainIdle();
+}
+
+</script>
+</body>
+</html>
